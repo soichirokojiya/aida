@@ -8,7 +8,7 @@ import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
 import { chatCompletion } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
-import { getGroupMemberDisplayName, getUserDisplayName } from "./line";
+import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
 
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
@@ -288,6 +288,12 @@ async function handleGroupMessage(
   const mentioned = isBotMentioned(event.text);
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
+  // 0. Get group member count for context
+  const memberCount = await getGroupMemberCount(event.externalThreadId);
+  const groupContext = memberCount
+    ? `（このグループは${memberCount}人。うめこを除くと${memberCount - 1}人の会話）`
+    : "";
+
   // 1. Safety check
   const safetyResult = await checkSafety(event.text);
   if (!safetyResult.isSafe) {
@@ -354,7 +360,7 @@ async function handleGroupMessage(
         // Mentioned but normal intent - respond conversationally
         const msgs = await getRecentMessages(conversation.id, 5);
         responseText = await chatCompletion(
-          CHAT_SYSTEM_PROMPT,
+          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
           `グループの直近の会話:\n${msgs.join("\n")}\n\n（あなたへの呼びかけ）: ${textForProcessing}`
         );
         break;
@@ -364,7 +370,7 @@ async function handleGroupMessage(
     // Not mentioned - only auto-mediate if conflict score is high
     if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
       const msgs = await getRecentMessages(conversation.id);
-      responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason);
+      responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext);
       triggerType = "auto_mediation";
     }
   }

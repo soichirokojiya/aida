@@ -111,4 +111,18 @@ export const lineAdapter: ChannelAdapter = {
   },
 };
 
-export { getGroupMemberDisplayName, getUserDisplayName };
+async function getGroupMemberCount(groupId: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `https://api.line.me/v2/bot/group/${groupId}/members/count`,
+      { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.count ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount };
