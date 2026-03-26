@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,64 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model Conversation {
+  id                  String    @id @default(cuid())
+  channelType         String    // line, slack, teams, web
+  externalThreadId    String
+  title               String?
+  participantsSummary String?
+  contextType         String    @default("unknown") // family, business_internal, business_external, client, unknown
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  messages      Message[]
+  interventions Intervention[]
+
+  @@unique([channelType, externalThreadId])
+  @@index([updatedAt])
+}
+
+model Message {
+  id                String   @id @default(cuid())
+  conversationId    String
+  externalMessageId String?
+  senderId          String
+  senderRole        String   @default("human") // human, bot, system
+  senderDisplayName String?
+  text              String
+  timestamp         DateTime
+  detectedIntent    String?  // normal, rewrite_request, summarize_request, mediation_request, conflict_signal, cooldown_needed, clarification_needed
+  conflictScore     Int?     // 0-100
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  interventions Intervention[]
+
+  @@unique([conversationId, externalMessageId])
+  @@index([conversationId, timestamp])
+}
+
+model Intervention {
+  id               String   @id @default(cuid())
+  conversationId   String
+  triggerMessageId String?
+  triggerType      String   // manual_rewrite, manual_summary, auto_mediation, cooldown, clarification, safety_escalation
+  score            Int?
+  reason           String?
+  responseText     String
+  createdAt        DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  triggerMessage Message?     @relation(fields: [triggerMessageId], references: [id])
+
+  @@index([conversationId, createdAt])
+}
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
 }
