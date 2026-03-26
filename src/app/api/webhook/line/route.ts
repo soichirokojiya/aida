@@ -42,10 +42,7 @@ async function handleFollow(event: RawLineEvent) {
     },
   });
 
-  // Send welcome message
-  if (event.replyToken) {
-    await lineAdapter.sendReply(event.replyToken, getWelcomeMessage());
-  }
+  // Welcome message is handled by LINE Official Account's greeting message
 }
 
 export async function POST(request: NextRequest) {
