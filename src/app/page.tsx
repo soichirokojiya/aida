@@ -334,64 +334,119 @@ export default function LandingPage() {
       </section>
 
       {/* ── うめこについて ── */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-3xl mx-auto">
-          <div className="grid md:grid-cols-[200px_1fr] gap-10 items-start">
-            <div className="text-center md:text-left">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/umeko-avatar.png" alt="うめこ" className="w-32 h-32 rounded-2xl shadow-md mx-auto md:mx-0 mb-4" />
-              <p className="font-bold text-gray-800 text-lg">うめこ</p>
-              <p className="text-sm text-gray-500">会話をやさしく整理する人</p>
+          <p className="text-center text-teal-600 text-sm font-medium mb-3">うめこについて</p>
+          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-16">
+            うめこってどんな人？
+          </h2>
+
+          {/* アバターと導入 */}
+          <div className="text-center mb-16">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/umeko-avatar.png" alt="うめこ" className="w-28 h-28 rounded-full shadow-lg mx-auto mb-6 border-4 border-teal-50" />
+            <p className="text-gray-500 text-base leading-relaxed max-w-lg mx-auto">
+              どこの職場にも、どこの家庭にも、
+              <br />
+              ひとりくらい「この人がいると空気が変わる」って人がいる。
+              <br />
+              うめこは、そういう存在を目指しています。
+            </p>
+          </div>
+
+          {/* ストーリー */}
+          <div className="space-y-12 mb-16">
+            <div className="grid md:grid-cols-[80px_1fr] gap-6">
+              <div className="text-3xl text-center md:text-right pt-1">📖</div>
+              <div>
+                <p className="font-medium text-gray-800 mb-2">もともと「なんか話しやすい人」だった</p>
+                <p className="text-gray-600 leading-relaxed">
+                  会議で空気が固まったとき、飲み会で誰かが泣き出したとき。
+                  いつの間にか隣にいて、さらっと場を和ませていた。
+                  本人は「別に何もしてない、ただ聞いてるだけ」と思っている。
+                  でも周りから見ると、うめこがいるだけで会話のトーンが少し変わる。
+                </p>
+              </div>
             </div>
 
-            <div>
-              {/* うめこからのコメント */}
-              <div className="bg-teal-50 rounded-2xl p-6 border border-teal-100 mb-8 relative">
-                <div className="hidden md:block absolute -left-3 top-8 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-teal-50" />
-                <p className="text-gray-700 leading-relaxed">
-                  はじめまして、うめこです。
+            <div className="grid md:grid-cols-[80px_1fr] gap-6">
+              <div className="text-3xl text-center md:text-right pt-1">💭</div>
+              <div>
+                <p className="font-medium text-gray-800 mb-2">うめこが大事にしていること</p>
+                <p className="text-gray-600 leading-relaxed">
+                  人は言い方ひとつで傷つくし、言い方ひとつで救われる。
+                  正しいことを正しく言っても、伝わらないことがある。
+                  黙ることは優しさじゃない。でも、言い方は選べる。
                   <br /><br />
+                  100点の解決より、まず1歩だけ前に進むこと。
+                  それだけでいいと思ってる。
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-[80px_1fr] gap-6">
+              <div className="text-3xl text-center md:text-right pt-1">🚫</div>
+              <div>
+                <p className="font-medium text-gray-800 mb-2">うめこがやらないこと</p>
+                <p className="text-gray-600 leading-relaxed">
+                  どっちが悪いか決める裁判官にはならない。
+                  「あなたが間違ってる」とは絶対に言わない。
+                  正論で相手をねじ伏せるお手伝いもしない。
+                  <br /><br />
+                  うめこがやるのは、ことばの温度を調整すること。
+                  からまった糸をほどくように、すれ違いをゆっくり整理すること。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* うめこの言葉（吹き出し） */}
+          <div className="bg-teal-50 rounded-2xl p-8 border border-teal-100 max-w-xl mx-auto">
+            <div className="flex items-start gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/umeko-avatar.png" alt="うめこ" className="w-10 h-10 rounded-full flex-shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-teal-700 mb-2">うめこより</p>
+                <p className="text-gray-700 leading-relaxed">
                   言いたいことがあるのに言い方がわからなくて黙ってしまったり、
                   つい強く言いすぎてあとから後悔したり。
-                  そういうこと、誰にでもあると思います。
+                  そういうこと、たぶん誰にでもある。
                   <br /><br />
                   わたしにできるのは、どっちが正しいか決めることじゃなくて、
                   ちょっとだけことばを整えるお手伝い。
                   <br /><br />
-                  気軽に話しかけてもらえたらうれしいです。
+                  気軽に話しかけてね。
                 </p>
-              </div>
-
-              {/* プロフィール */}
-              <div className="space-y-4">
-                <div>
-                  <p className="font-medium text-gray-800 text-sm mb-2">性格</p>
-                  <p className="text-gray-600 text-base leading-relaxed">
-                    穏やかで落ち着いてるけど、暗くはない。
-                    人の話を最後まで聞ける。正論より共感が先に出るタイプ。
-                    おせっかいはしないけど、荒れそうなときはそっと声をかける。
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-800 text-sm mb-2">好きなもの</p>
-                  <p className="text-gray-500 text-base">紅茶、散歩、古い喫茶店、猫の動画</p>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-800 text-sm mb-2">苦手なもの</p>
-                  <p className="text-gray-500 text-base">大声、正論で詰める人、「で、結論は？」って急かされること</p>
-                </div>
-
-                <div>
-                  <p className="font-medium text-gray-800 text-sm mb-2">信条</p>
-                  <p className="text-teal-700 text-base font-medium">
-                    「どっちが悪いかより、どうしたらうまくいくか」
-                  </p>
-                </div>
               </div>
             </div>
           </div>
+
+          {/* プロフィールカード */}
+          <div className="mt-12 grid sm:grid-cols-3 gap-4">
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <p className="font-medium text-gray-800 text-sm mb-2">性格</p>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                穏やかだけど暗くない。正論より共感が先。おせっかいはしない。
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <p className="font-medium text-gray-800 text-sm mb-2">好きなもの</p>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                紅茶、散歩、古い喫茶店、猫の動画、窓際の席
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+              <p className="font-medium text-gray-800 text-sm mb-2">苦手なもの</p>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                大声、正論で詰める人、「で、結論は？」って急かされること
+              </p>
+            </div>
+          </div>
+
+          {/* 信条 */}
+          <p className="text-center mt-10 text-teal-700 text-lg font-medium">
+            「どっちが悪いかより、どうしたらうまくいくか」
+          </p>
         </div>
       </section>
 
