@@ -16,11 +16,45 @@ function getAccessToken(): string {
   return process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
 }
 
+async function getGroupMemberDisplayName(
+  groupId: string,
+  userId: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.line.me/v2/bot/group/${groupId}/member/${userId}`,
+      {
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.displayName || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getUserDisplayName(userId: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api.line.me/v2/bot/profile/${userId}`,
+      {
+        headers: { Authorization: `Bearer ${getAccessToken()}` },
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.displayName || null;
+  } catch {
+    return null;
+  }
+}
+
 export const lineAdapter: ChannelAdapter = {
   channelType: "line",
 
   async validateRequest(): Promise<boolean> {
-    // Validation is handled in the route handler
     return true;
   },
 
@@ -76,3 +110,5 @@ export const lineAdapter: ChannelAdapter = {
     });
   },
 };
+
+export { getGroupMemberDisplayName, getUserDisplayName };

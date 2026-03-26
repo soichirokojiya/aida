@@ -8,6 +8,7 @@ import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
 import { chatCompletion } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
+import { getGroupMemberDisplayName, getUserDisplayName } from "./line";
 
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
@@ -102,6 +103,24 @@ async function saveMessage(
   });
 }
 
+async function resolveDisplayName(event: NormalizedMessageEvent): Promise<string | undefined> {
+  if (event.senderDisplayName) return event.senderDisplayName;
+  if (event.senderId === "unknown") return undefined;
+
+  try {
+    let name: string | null = null;
+    if (!event.isDirectMessage) {
+      name = await getGroupMemberDisplayName(event.externalThreadId, event.senderId);
+    }
+    if (!name) {
+      name = await getUserDisplayName(event.senderId);
+    }
+    return name || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function getRecentMessages(
   conversationId: string,
   limit = 10
@@ -111,9 +130,18 @@ async function getRecentMessages(
     orderBy: { timestamp: "desc" },
     take: limit,
   });
+  // Use anonymous labels (Aさん, Bさん) for LLM to avoid leaking real names
+  const senderMap = new Map<string, string>();
+  let labelIndex = 0;
+  const labels = ["Aさん", "Bさん", "Cさん", "Dさん", "Eさん"];
+
   return messages.reverse().map((m) => {
-    const name = m.senderDisplayName || m.senderId.slice(0, 6);
-    return `${name}: ${m.text}`;
+    if (m.senderRole === "bot") return `うめこ: ${m.text}`;
+    if (!senderMap.has(m.senderId)) {
+      senderMap.set(m.senderId, labels[labelIndex % labels.length]);
+      labelIndex++;
+    }
+    return `${senderMap.get(m.senderId)}: ${m.text}`;
   });
 }
 
@@ -361,6 +389,12 @@ export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
+  // Resolve display name from LINE API
+  const displayName = await resolveDisplayName(event);
+  if (displayName) {
+    event.senderDisplayName = displayName;
+  }
+
   const conversation = await getOrCreateConversation(event);
 
   if (event.isDirectMessage) {
