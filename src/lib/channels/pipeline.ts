@@ -9,6 +9,9 @@ import { generateSummary } from "../summarize/generator";
 import { chatCompletion } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
+import { isUserActive } from "../billing/check";
+import { getExpiredReplyMessage } from "../billing/messages";
+import { createCheckoutUrl } from "../billing/stripe";
 
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
@@ -393,6 +396,20 @@ export async function processMessage(
   const displayName = await resolveDisplayName(event);
   if (displayName) {
     event.senderDisplayName = displayName;
+  }
+
+  // Check billing status for DM (group messages always work)
+  if (event.isDirectMessage) {
+    const active = await isUserActive(event.senderId);
+    if (!active) {
+      try {
+        const url = await createCheckoutUrl(event.senderId);
+        await sendResponse(adapter, event, getExpiredReplyMessage(url));
+      } catch {
+        await sendResponse(adapter, event, "おためし期間が終了しています。引き続きご利用いただくには、月額プランへの登録をお願いします。");
+      }
+      return;
+    }
   }
 
   const conversation = await getOrCreateConversation(event);

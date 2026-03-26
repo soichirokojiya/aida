@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { lineAdapter } from "@/lib/channels/line";
 import { processMessage } from "@/lib/channels/pipeline";
+import { prisma } from "@/lib/db/prisma";
+import { getWelcomeMessage } from "@/lib/billing/messages";
+
+interface RawLineEvent {
+  type: string;
+  source?: { userId?: string };
+  replyToken?: string;
+}
 
 function validateSignature(body: string, signature: string): boolean {
   const secret = process.env.LINE_CHANNEL_SECRET || "";
@@ -14,6 +22,30 @@ function validateSignature(body: string, signature: string): boolean {
     .update(body)
     .digest("base64");
   return hash === signature;
+}
+
+async function handleFollow(event: RawLineEvent) {
+  const userId = event.source?.userId;
+  if (!userId) return;
+
+  const trialDays = 30;
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+  await prisma.lineUser.upsert({
+    where: { lineUserId: userId },
+    update: {}, // Don't reset if they re-follow
+    create: {
+      lineUserId: userId,
+      trialEndsAt,
+      billingStatus: "trial",
+    },
+  });
+
+  // Send welcome message
+  if (event.replyToken) {
+    await lineAdapter.sendReply(event.replyToken, getWelcomeMessage());
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -30,9 +62,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: "ok" });
   }
 
-  const events = lineAdapter.normalizeEvents(body);
+  // Handle follow events
+  for (const rawEvent of body.events as RawLineEvent[]) {
+    if (rawEvent.type === "follow") {
+      try {
+        await handleFollow(rawEvent);
+      } catch (err) {
+        console.error("Error handling follow:", err);
+      }
+    }
+  }
 
-  // Must await - Vercel serverless functions terminate after response
+  // Handle message events
+  const events = lineAdapter.normalizeEvents(body);
   for (const event of events) {
     try {
       await processMessage(event, lineAdapter);

@@ -64,7 +64,8 @@ export default function LandingPage() {
 
               <LineButton>LINEで友だち追加する</LineButton>
               <p className="mt-3 text-sm text-gray-500">
-                無料ではじめられます
+                <span className="font-medium text-teal-600">1ヶ月間無料</span>
+                　その後 月額¥980
               </p>
             </div>
 
@@ -332,6 +333,35 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── 料金 ── */}
+      <section className="py-20 px-6 bg-[#FAFBFC]">
+        <div className="max-w-md mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-10">
+            料金
+          </h2>
+
+          <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+            <p className="text-teal-600 font-medium text-sm mb-1">まずは無料でおためし</p>
+            <p className="text-4xl font-bold text-gray-800 mb-1">¥0</p>
+            <p className="text-gray-500 text-base mb-6">最初の1ヶ月間</p>
+
+            <div className="border-t border-gray-100 pt-6 mb-6">
+              <p className="text-gray-500 text-sm mb-1">その後</p>
+              <p className="text-2xl font-bold text-gray-800">¥980<span className="text-base font-normal text-gray-500"> /月</span></p>
+            </div>
+
+            <ul className="text-left space-y-2 text-base text-gray-600 mb-6">
+              <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>グループ会話の見守り・整理</li>
+              <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>1対1の相談・言い換え</li>
+              <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>回数無制限</li>
+              <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>いつでも解約OK</li>
+            </ul>
+
+            <LineButton size="sm">友だち追加して無料で始める</LineButton>
+          </div>
+        </div>
+      </section>
+
       {/* ── 安心感 ── */}
       <section className="py-20 px-6 bg-[#FAFBFC]">
         <div className="max-w-2xl mx-auto text-center">
@@ -383,7 +413,8 @@ export default function LandingPage() {
 
           <LineButton>LINEで友だち追加する</LineButton>
           <p className="mt-3 text-sm text-gray-500">
-            無料ではじめられます・いつでもブロックできます
+            <span className="font-medium text-teal-600">1ヶ月間無料</span>
+            　その後 月額¥980・いつでも解約OK
           </p>
 
           {/* eslint-disable-next-line @next/next/no-img-element */}

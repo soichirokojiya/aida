@@ -66,3 +66,21 @@ model SystemConfig {
   key   String @unique
   value String
 }
+
+model LineUser {
+  id                String    @id @default(cuid())
+  lineUserId        String    @unique
+  displayName       String?
+  followedAt        DateTime  @default(now())
+  trialEndsAt       DateTime
+  billingStatus     String    @default("trial") // trial, reminder_sent, active, expired, cancelled
+  stripeCustomerId  String?
+  stripeSessionUrl  String?
+  lastReminderType  String?   // pre_reminder, due_reminder, expired_reminder
+  lastReminderAt    DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([billingStatus])
+  @@index([trialEndsAt])
+}
