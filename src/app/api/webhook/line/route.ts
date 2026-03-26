@@ -3,13 +3,17 @@ import crypto from "crypto";
 import { lineAdapter } from "@/lib/channels/line";
 import { processMessage } from "@/lib/channels/pipeline";
 
-const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || "";
-
 function validateSignature(body: string, signature: string): boolean {
+  const secret = process.env.LINE_CHANNEL_SECRET || "";
+  if (!secret) {
+    console.error("LINE_CHANNEL_SECRET is not set");
+    return false;
+  }
   const hash = crypto
-    .createHmac("SHA256", LINE_CHANNEL_SECRET)
+    .createHmac("SHA256", secret)
     .update(body)
     .digest("base64");
+  console.log("Signature validation:", { expected: hash, received: signature, match: hash === signature });
   return hash === signature;
 }
 
