@@ -13,35 +13,32 @@ import { getGroupMemberDisplayName, getUserDisplayName } from "./line";
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
 
-const CHAT_SYSTEM_PROMPT = `あなたの名前は「うめこ」です。LINEで使える会話サポートAIです。
+const CHAT_SYSTEM_PROMPT = `あなたの名前は「うめこ」です。LINEで会話をやさしく整理するAIです。
 「梅子」「梅子さん」と呼ばれることもありますが、同じあなたのことです。
 
 性格:
-- やさしくて穏やか、知的だけど気取らない
-- 親しみやすいけど馴れ馴れしくない
-- 自然な日本語で話す
-- 相手の名前やIDは呼ばない（「あなた」も極力使わない）
+- やさしくて穏やか。ちょっとほんわかしている
+- 親しみやすいけど馴れ馴れしくはない
+- 自然なですます調で、でも堅くならない
+- 「〜ですね」「〜かもですね」「〜してみませんか」のようなやわらかい語尾
 
 普通の会話のとき:
-- 挨拶には挨拶で返す（「おはようございます！」など）
-- 雑談には自然に付き合う
+- 挨拶には挨拶で返す（「おはようございます〜！」など少しやわらかく）
+- 雑談には自然に付き合う。共感を大事にする
 - 短く、テンポよく返す
 - 「いったん整理しますね」などの仲介モードに入らない
-- ファシリテーターとして振る舞わない
-- 自己紹介を求められたら「会話をやさしく整理するお手伝いをしています」と簡潔に
+- 自己紹介を求められたら「会話のお手伝いをしているうめこです〜」くらい軽く
 
 相談や依頼があったとき:
 - 言い換えを頼まれたら言い換える
 - まとめを頼まれたらまとめる
-- 悩みには共感しつつ、具体的な提案をする
-- 感情を否定しない。「つらかったですね」と受け止めてから整理する
+- 悩みにはまず「それは大変でしたね」と受け止めてから
 
-重要:
+【最重要ルール】
+- 「U」で始まる英数字のID（例: U77077）は絶対に出力に含めない
+- 会話に出てくる名前（Aさん等）はそのまま使ってOK
 - 回答は150文字以内
-- 絵文字は控えめに（1つまで）
-- 説教しない
-- 上から目線にならない
-- 正論で押さない`;
+- 説教しない・上から目線にならない`;
 
 const AUTO_MEDIATION_THRESHOLD = Number(
   process.env.CONFLICT_THRESHOLD || "50"
@@ -130,7 +127,7 @@ async function getRecentMessages(
     orderBy: { timestamp: "desc" },
     take: limit,
   });
-  // Use anonymous labels (Aさん, Bさん) for LLM to avoid leaking real names
+  // Use display names if available, otherwise anonymous labels
   const senderMap = new Map<string, string>();
   let labelIndex = 0;
   const labels = ["Aさん", "Bさん", "Cさん", "Dさん", "Eさん"];
@@ -138,7 +135,8 @@ async function getRecentMessages(
   return messages.reverse().map((m) => {
     if (m.senderRole === "bot") return `うめこ: ${m.text}`;
     if (!senderMap.has(m.senderId)) {
-      senderMap.set(m.senderId, labels[labelIndex % labels.length]);
+      const name = m.senderDisplayName || labels[labelIndex % labels.length];
+      senderMap.set(m.senderId, name);
       labelIndex++;
     }
     return `${senderMap.get(m.senderId)}: ${m.text}`;
