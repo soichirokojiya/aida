@@ -56,14 +56,14 @@ export default function LandingPage() {
               <p className="text-gray-500 text-base md:text-lg leading-relaxed mb-3">
                 すれ違いを、少しずつ軽く。
               </p>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8">
+              <p className="text-gray-500 text-base leading-relaxed mb-8">
                 グループに入れたら会話を見守って整理。
                 <br />
                 1対1で話しかければ、相談相手にもなります。
               </p>
 
               <LineButton>LINEで友だち追加する</LineButton>
-              <p className="mt-3 text-xs text-gray-400">
+              <p className="mt-3 text-sm text-gray-500">
                 無料ではじめられます
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             グループでも、1対1でも
           </h2>
-          <p className="text-center text-gray-400 text-sm mb-12 max-w-lg mx-auto">
+          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
             うめこはグループトークに参加して会話を見守ることも、
             <br />
             1対1で直接相談することもできます。
@@ -96,10 +96,10 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-800 text-sm">グループに招待する</p>
-                  <p className="text-xs text-gray-400">会話を見守り、必要なときだけ介入</p>
+                  <p className="text-sm text-gray-500">会話を見守り、必要なときだけ介入</p>
                 </div>
               </div>
-              <ul className="space-y-2 text-sm text-gray-500">
+              <ul className="space-y-2 text-base text-gray-600">
                 <li className="flex gap-2"><span className="text-teal-400">・</span>普段は静かに見守っている</li>
                 <li className="flex gap-2"><span className="text-teal-400">・</span>空気が悪くなりそうなとき、さりげなく整理</li>
                 <li className="flex gap-2"><span className="text-teal-400">・</span>「うめこ、まとめて」と呼べばいつでも対応</li>
@@ -114,10 +114,10 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-800 text-sm">1対1で相談する</p>
-                  <p className="text-xs text-gray-400">伝え方の相談、言い換え、愚痴を聞く</p>
+                  <p className="text-sm text-gray-500">伝え方の相談、言い換え、愚痴を聞く</p>
                 </div>
               </div>
-              <ul className="space-y-2 text-sm text-gray-500">
+              <ul className="space-y-2 text-base text-gray-600">
                 <li className="flex gap-2"><span className="text-sky-400">・</span>「こう言いたいけど、どう伝えたらいい？」</li>
                 <li className="flex gap-2"><span className="text-sky-400">・</span>送る前のメッセージをやわらかくチェック</li>
                 <li className="flex gap-2"><span className="text-sky-400">・</span>モヤモヤを整理するだけでもOK</li>
@@ -147,7 +147,7 @@ export default function LandingPage() {
             ].map((text, i) => (
               <div key={i} className="flex items-start gap-3 rounded-xl p-4 bg-gray-50 border border-gray-100">
                 <span className="text-teal-400 mt-0.5 text-sm">&#9679;</span>
-                <p className="text-sm text-gray-600 leading-relaxed">{text}</p>
+                <p className="text-base text-gray-600 leading-relaxed">{text}</p>
               </div>
             ))}
           </div>
@@ -161,7 +161,7 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             会話が荒れそうなとき、そっと整理
           </h2>
-          <p className="text-center text-gray-400 text-sm mb-12 max-w-md mx-auto">
+          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
             うめこをグループに招待しておくだけ。
             <br />
             普段は静かに見守り、空気が変わったときだけ声をかけます。
@@ -172,7 +172,7 @@ export default function LandingPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <p className="text-sm font-medium text-gray-800 mb-3">うめこがやっていること</p>
-                <ul className="space-y-2 text-sm text-gray-500">
+                <ul className="space-y-2 text-base text-gray-600">
                   <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>どちらが悪いかは言わない</li>
                   <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>すれ違いのポイントを言語化</li>
                   <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>次にやることを1つだけ提案</li>
@@ -180,7 +180,7 @@ export default function LandingPage() {
               </div>
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <p className="text-sm font-medium text-gray-800 mb-3">こんなグループで</p>
-                <ul className="space-y-1.5 text-sm text-gray-400">
+                <ul className="space-y-1.5 text-sm text-gray-500">
                   <li>・夫婦・カップル・家族</li>
                   <li>・プロジェクトチーム</li>
                   <li>・取引先との連絡グループ</li>
@@ -199,7 +199,7 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             伝え方に迷ったら、まずうめこに相談
           </h2>
-          <p className="text-center text-gray-400 text-sm mb-12 max-w-md mx-auto">
+          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
             送る前のメッセージを見てもらったり、
             <br />
             モヤモヤを整理するだけの使い方もOK。
@@ -209,7 +209,7 @@ export default function LandingPage() {
             <div className="space-y-6 order-2 md:order-1">
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <p className="text-sm font-medium text-gray-800 mb-3">こんなふうに使える</p>
-                <ul className="space-y-2 text-sm text-gray-500">
+                <ul className="space-y-2 text-base text-gray-600">
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「こう言いたいけど、どう伝える？」</li>
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「このメッセージ、柔らかくして」</li>
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「ちょっと愚痴聞いて」</li>
@@ -218,7 +218,7 @@ export default function LandingPage() {
               </div>
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <p className="text-sm font-medium text-gray-800 mb-3">グループとの違い</p>
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-gray-500 leading-relaxed">
                   グループではみんなの前で整理役。
                   <br />
                   1対1では、あなただけの相談相手。
@@ -241,7 +241,7 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             チーム内のすれ違いも、さらっと整理
           </h2>
-          <p className="text-center text-gray-400 text-sm mb-12 max-w-md mx-auto">
+          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
             社内のグループに入れておけば、
             <br />
             認識のズレや感情的なやりとりをやわらかく整理します。
@@ -273,7 +273,7 @@ export default function LandingPage() {
                 <span className="text-xl flex-shrink-0">{item.icon}</span>
                 <div>
                   <p className="font-medium text-gray-800 text-sm mb-0.5">{item.title}</p>
-                  <p className="text-xs text-gray-400">{item.desc}</p>
+                  <p className="text-sm text-gray-500">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -293,7 +293,7 @@ export default function LandingPage() {
               <p className="font-medium text-gray-800 text-sm mb-4 flex items-center gap-2">
                 <span>👥</span> グループで使う場合
               </p>
-              <ol className="space-y-3 text-sm text-gray-600">
+              <ol className="space-y-3 text-base text-gray-600">
                 <li className="flex gap-3">
                   <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
                   うめこを友だち追加
@@ -313,7 +313,7 @@ export default function LandingPage() {
               <p className="font-medium text-gray-800 text-sm mb-4 flex items-center gap-2">
                 <span>💬</span> 1対1で使う場合
               </p>
-              <ol className="space-y-3 text-sm text-gray-600">
+              <ol className="space-y-3 text-base text-gray-600">
                 <li className="flex gap-3">
                   <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
                   うめこを友だち追加
@@ -352,7 +352,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <p className="text-gray-400 text-sm leading-relaxed">
+          <p className="text-gray-500 text-base leading-relaxed">
             うめこは裁判官じゃなくて、ちょっと気が利く友達。
             <br />
             どっちが悪いかじゃなく、どうしたらうまくいくかを考えます。
@@ -375,14 +375,14 @@ export default function LandingPage() {
             うめこへ。
           </h2>
 
-          <p className="text-gray-400 text-sm leading-relaxed mb-10">
+          <p className="text-gray-500 text-base leading-relaxed mb-10">
             グループに招待しても、1対1で話しかけても。
             <br />
             関係を壊さずに伝えるための、小さな相棒。
           </p>
 
           <LineButton>LINEで友だち追加する</LineButton>
-          <p className="mt-3 text-xs text-gray-400">
+          <p className="mt-3 text-sm text-gray-500">
             無料ではじめられます・いつでもブロックできます
           </p>
 
@@ -404,8 +404,9 @@ export default function LandingPage() {
             <img src="/umeko-avatar.png" alt="うめこ" className="w-6 h-6 rounded-full" />
             <span className="text-sm font-semibold text-gray-700">うめこ</span>
           </div>
-          <div className="flex items-center gap-6 text-xs text-gray-400">
-            <Link href="/admin" className="hover:text-gray-600 transition">管理画面</Link>
+          <div className="flex items-center gap-6 text-xs text-gray-500">
+            <a href="https://cfac.co.jp" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700 transition">運営会社</a>
+            <Link href="/admin" className="hover:text-gray-700 transition">管理画面</Link>
             <span>&copy; 2026 うめこ</span>
           </div>
         </div>
