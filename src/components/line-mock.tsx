@@ -128,27 +128,36 @@ export const FAMILY_CHAT: Message[] = [
 ];
 
 export const BUSINESS_CHAT: Message[] = [
-  { sender: "right", text: "先日の納品物、合意した内容と\nかなり違っていたのですが…", time: "14:20" },
-  { sender: "left", name: "鈴木", text: "確認不足がありまして、\n申し訳ございません", time: "14:25" },
-  { sender: "right", text: "これで3回目なので、\n正直今後のお取引を\n考えざるを得ません", time: "14:26" },
+  { sender: "right", text: "この前の件、なんで事前に\n共有してくれなかったんですか？\nこっちは聞いてなかったんですけど", time: "14:20" },
+  { sender: "left", name: "田中", text: "いや、先週のMTGで\n話したと思うんですが…", time: "14:22" },
+  { sender: "right", text: "聞いてないです。\nいつもそうですよね、\n共有が後出しなんですよ", time: "14:23" },
   {
     sender: "left",
     name: "うめこ",
     avatar: "/umeko-avatar.png",
     isBot: true,
-    text: "お気持ちわかります。\nまず「今回のズレがどこで起きたか」を具体的に確認して、再発防止の仕組みを一緒に決めるのはどうですか？",
-    time: "14:27",
+    text: "ちょっと待って。\n「伝えたつもり」と「聞いてない」がぶつかってるね。\nまず、先週のMTGの議事録を一緒に確認してみない？事実ベースで整理しよう。",
+    time: "14:24",
   },
 ];
 
-export const REWRITE_CHAT: Message[] = [
-  { sender: "right", text: "うめこ、これ柔らかくして\n\n「なんでまだできてないの？\n期限過ぎてるんだけど」", time: "10:15" },
+export const DM_CONSULT_CHAT: Message[] = [
+  { sender: "right", text: "上司にプロジェクトの遅れを\n報告しなきゃなんだけど、\nどう言えばいいかな…", time: "19:30" },
   {
     sender: "left",
     name: "うめこ",
     avatar: "/umeko-avatar.png",
     isBot: true,
-    text: "進捗を確認したいです。\n現状と完了見込みを\n教えてもらえますか？",
-    time: "10:15",
+    text: "それは言いづらいやつだね。\nどのくらい遅れてる？",
+    time: "19:30",
+  },
+  { sender: "right", text: "1週間くらい。\n自分のミスもあるから\nよけいに言いにくい", time: "19:31" },
+  {
+    sender: "left",
+    name: "うめこ",
+    avatar: "/umeko-avatar.png",
+    isBot: true,
+    text: "たとえばこんな感じはどう？\n\n「お伝えするのが遅くなり申し訳ありません。○○の件、当初の予定から1週間ほど遅れが出ています。原因と対策をまとめましたので、ご確認いただけますか」",
+    time: "19:32",
   },
 ];

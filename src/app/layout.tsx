@@ -15,7 +15,25 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "うめこ | 会話をやさしく整理するAI",
   description:
-    "言いづらいことをやわらかく。すれ違いを少しずつ軽く。夫婦にも、仕事にも使える会話サポートAI「うめこ」",
+    "言いづらいことをやわらかく。すれ違いを少しずつ軽く。グループでも1対1でも使える会話サポートAI「うめこ」",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
+  openGraph: {
+    title: "うめこ | 会話をやさしく整理するAI",
+    description:
+      "言いづらいことをやわらかく。すれ違いを少しずつ軽く。LINEグループに招待しても、1対1で相談しても。",
+    images: [{ url: "/umeko-avatar.png", width: 1080, height: 1080 }],
+    type: "website",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary",
+    title: "うめこ | 会話をやさしく整理するAI",
+    description: "言いづらいことをやわらかく。すれ違いを少しずつ軽く。",
+    images: ["/umeko-avatar.png"],
+  },
 };
 
 export default function RootLayout({
