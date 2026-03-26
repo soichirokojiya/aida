@@ -330,6 +330,14 @@ export default function LandingPage() {
               </ol>
             </div>
           </div>
+
+          <div className="mt-8 bg-gray-50 rounded-xl p-5 border border-gray-100 flex items-center gap-4">
+            <span className="text-2xl flex-shrink-0">💼</span>
+            <div>
+              <p className="text-sm font-medium text-gray-800">Slack にも近日対応予定</p>
+              <p className="text-sm text-gray-500">社内のSlackワークスペースでも、うめこが使えるようになります。</p>
+            </div>
+          </div>
         </div>
       </section>
 
