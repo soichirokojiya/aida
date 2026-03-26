@@ -110,7 +110,7 @@ async function saveMessage(
       conversationId,
       externalMessageId: event.externalMessageId,
       senderId: event.senderId,
-      senderDisplayName: event.senderDisplayName,
+      // Don't store display names in DB for privacy
       text: event.text,
       timestamp: event.timestamp,
       detectedIntent: intent,
@@ -137,6 +137,26 @@ async function resolveDisplayName(event: NormalizedMessageEvent): Promise<string
   }
 }
 
+// In-memory cache for display names (per request lifecycle)
+const nameCache = new Map<string, string>();
+
+async function resolveNameForLLM(senderId: string, threadId: string, isDm: boolean): Promise<string | null> {
+  if (nameCache.has(senderId)) return nameCache.get(senderId)!;
+  try {
+    let name: string | null = null;
+    if (!isDm) {
+      name = await getGroupMemberDisplayName(threadId, senderId);
+    }
+    if (!name) {
+      name = await getUserDisplayName(senderId);
+    }
+    if (name) nameCache.set(senderId, name);
+    return name;
+  } catch {
+    return null;
+  }
+}
+
 async function getRecentMessages(
   conversationId: string,
   limit = 10
@@ -146,12 +166,20 @@ async function getRecentMessages(
     orderBy: { timestamp: "desc" },
     take: limit,
   });
-  return messages.reverse().map((m) => {
-    if (m.senderRole === "bot") return `うめこ: ${m.text}`;
-    // Display name or omit sender entirely
-    const name = m.senderDisplayName;
-    return name ? `${name}: ${m.text}` : m.text;
-  });
+
+  const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
+  const threadId = conv?.externalThreadId || "";
+
+  const result: string[] = [];
+  for (const m of messages.reverse()) {
+    if (m.senderRole === "bot") {
+      result.push(`うめこ: ${m.text}`);
+    } else {
+      const name = await resolveNameForLLM(m.senderId, threadId, false);
+      result.push(name ? `${name}: ${m.text}` : m.text);
+    }
+  }
+  return result;
 }
 
 async function saveIntervention(

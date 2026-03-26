@@ -474,6 +474,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Q&A ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-12">
+            よくある質問
+          </h2>
+
+          <div className="space-y-6">
+            {[
+              {
+                q: "会話の内容は安全ですか？",
+                a: "はい。会話データはユーザーの実名を保存せず、LINE上のIDのみで管理しています。万が一の情報漏洩時にも、誰の発言かが特定されない設計です。",
+              },
+              {
+                q: "グループの会話が外部に共有されることはありますか？",
+                a: "ありません。会話データは第三者に共有・販売されることはありません。AIの応答生成のためにのみ使用されます。",
+              },
+              {
+                q: "無料期間が終わったらどうなりますか？",
+                a: "1対1でのお返事ができなくなります。グループでの会話記録は引き続き行われます。月額プランに登録すればすぐに復帰できます。",
+              },
+              {
+                q: "グループに入れたら全部の会話に返信しますか？",
+                a: "いいえ。普段は静かに見守っているだけです。空気が悪くなりそうなときや、「うめこ」と呼びかけたときだけ反応します。",
+              },
+              {
+                q: "1対1では何ができますか？",
+                a: "伝え方の相談、メッセージの言い換え、愚痴を聞く、モヤモヤの整理など、なんでも話しかけてもらえます。",
+              },
+              {
+                q: "解約はかんたんにできますか？",
+                a: "はい。いつでも解約できます。LINEをブロックするだけでもOKです。",
+              },
+              {
+                q: "LINE以外でも使えますか？",
+                a: "現在はLINEのみ対応しています。Slackにも近日対応予定です。",
+              },
+            ].map((item, i) => (
+              <div key={i} className="border-b border-gray-100 pb-6">
+                <p className="font-medium text-gray-800 mb-2">{item.q}</p>
+                <p className="text-gray-500 text-base leading-relaxed">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="relative py-24 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#E8F4F0] via-white to-[#EBF2FA]" />
