@@ -333,6 +333,68 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── うめこについて ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-[200px_1fr] gap-10 items-start">
+            <div className="text-center md:text-left">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/umeko-avatar.png" alt="うめこ" className="w-32 h-32 rounded-2xl shadow-md mx-auto md:mx-0 mb-4" />
+              <p className="font-bold text-gray-800 text-lg">うめこ</p>
+              <p className="text-sm text-gray-500">会話をやさしく整理する人</p>
+            </div>
+
+            <div>
+              {/* うめこからのコメント */}
+              <div className="bg-teal-50 rounded-2xl p-6 border border-teal-100 mb-8 relative">
+                <div className="hidden md:block absolute -left-3 top-8 w-0 h-0 border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-8 border-r-teal-50" />
+                <p className="text-gray-700 leading-relaxed">
+                  はじめまして、うめこです。
+                  <br /><br />
+                  言いたいことがあるのに言い方がわからなくて黙ってしまったり、
+                  つい強く言いすぎてあとから後悔したり。
+                  そういうこと、誰にでもあると思います。
+                  <br /><br />
+                  わたしにできるのは、どっちが正しいか決めることじゃなくて、
+                  ちょっとだけことばを整えるお手伝い。
+                  <br /><br />
+                  気軽に話しかけてもらえたらうれしいです。
+                </p>
+              </div>
+
+              {/* プロフィール */}
+              <div className="space-y-4">
+                <div>
+                  <p className="font-medium text-gray-800 text-sm mb-2">性格</p>
+                  <p className="text-gray-600 text-base leading-relaxed">
+                    穏やかで落ち着いてるけど、暗くはない。
+                    人の話を最後まで聞ける。正論より共感が先に出るタイプ。
+                    おせっかいはしないけど、荒れそうなときはそっと声をかける。
+                  </p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-800 text-sm mb-2">好きなもの</p>
+                  <p className="text-gray-500 text-base">紅茶、散歩、古い喫茶店、猫の動画</p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-800 text-sm mb-2">苦手なもの</p>
+                  <p className="text-gray-500 text-base">大声、正論で詰める人、「で、結論は？」って急かされること</p>
+                </div>
+
+                <div>
+                  <p className="font-medium text-gray-800 text-sm mb-2">信条</p>
+                  <p className="text-teal-700 text-base font-medium">
+                    「どっちが悪いかより、どうしたらうまくいくか」
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── 料金 ── */}
       <section className="py-20 px-6 bg-[#FAFBFC]">
         <div className="max-w-md mx-auto text-center">
