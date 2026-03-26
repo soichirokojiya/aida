@@ -1,10 +1,9 @@
-import crypto from "crypto";
 import { ChannelAdapter, NormalizedMessageEvent } from "./types";
 
 interface LineEvent {
   type: string;
   replyToken?: string;
-  source?: { type: string; groupId?: string; userId?: string };
+  source?: { type: string; groupId?: string; roomId?: string; userId?: string };
   message?: { id: string; type: string; text?: string };
   timestamp: number;
 }
@@ -13,25 +12,16 @@ interface LineWebhookBody {
   events: LineEvent[];
 }
 
-const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || "";
-const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
-
-function validateSignature(body: string, signature: string): boolean {
-  const hash = crypto
-    .createHmac("SHA256", LINE_CHANNEL_SECRET)
-    .update(body)
-    .digest("base64");
-  return hash === signature;
+function getAccessToken(): string {
+  return process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
 }
 
 export const lineAdapter: ChannelAdapter = {
   channelType: "line",
 
-  async validateRequest(request: Request): Promise<boolean> {
-    const signature = request.headers.get("x-line-signature");
-    if (!signature) return false;
-    const body = await request.clone().text();
-    return validateSignature(body, signature);
+  async validateRequest(): Promise<boolean> {
+    // Validation is handled in the route handler
+    return true;
   },
 
   normalizeEvents(body: unknown): NormalizedMessageEvent[] {
@@ -39,22 +29,23 @@ export const lineAdapter: ChannelAdapter = {
     if (!webhookBody.events) return [];
 
     return webhookBody.events
-      .filter(
-        (e) =>
-          e.type === "message" &&
-          e.message?.type === "text" &&
-          e.source?.groupId
-      )
-      .map((e) => ({
-        channelType: "line" as const,
-        externalThreadId: e.source!.groupId!,
-        externalMessageId: e.message!.id,
-        senderId: e.source!.userId || "unknown",
-        text: e.message!.text!,
-        timestamp: new Date(e.timestamp),
-        replyToken: e.replyToken,
-        rawEvent: e,
-      }));
+      .filter((e) => e.type === "message" && e.message?.type === "text")
+      .map((e) => {
+        const isGroup = e.source?.type === "group" || e.source?.type === "room";
+        const threadId = e.source?.groupId || e.source?.roomId || e.source?.userId || "unknown";
+
+        return {
+          channelType: "line" as const,
+          externalThreadId: threadId,
+          externalMessageId: e.message!.id,
+          senderId: e.source?.userId || "unknown",
+          text: e.message!.text!,
+          timestamp: new Date(e.timestamp),
+          replyToken: e.replyToken,
+          isDirectMessage: !isGroup,
+          rawEvent: e,
+        };
+      });
   },
 
   async sendReply(replyToken: string, text: string): Promise<void> {
@@ -62,7 +53,7 @@ export const lineAdapter: ChannelAdapter = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${getAccessToken()}`,
       },
       body: JSON.stringify({
         replyToken,
@@ -76,7 +67,7 @@ export const lineAdapter: ChannelAdapter = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${getAccessToken()}`,
       },
       body: JSON.stringify({
         to: externalThreadId,

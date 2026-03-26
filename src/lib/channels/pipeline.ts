@@ -1,15 +1,33 @@
 import { prisma } from "../db/prisma";
 import { NormalizedMessageEvent, ChannelAdapter } from "./types";
 import { detectIntent, Intent } from "../intent/detector";
-import { scoreConflict, ConflictResult } from "../conflict/scorer";
+import { scoreConflict } from "../conflict/scorer";
 import { checkSafety, getSafetyResponse } from "../safety/checker";
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
+import { chatCompletion } from "../llm/client";
+import { getMediatorPromptForContext } from "../prompts/system";
+
+const BOT_NAME = "うめこ";
+const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /umeko/i];
 
 const AUTO_MEDIATION_THRESHOLD = Number(
   process.env.CONFLICT_THRESHOLD || "50"
 );
+
+function isBotMentioned(text: string): boolean {
+  return BOT_NAME_PATTERNS.some((p) => p.test(text));
+}
+
+function stripBotName(text: string): string {
+  let result = text;
+  for (const pattern of BOT_NAME_PATTERNS) {
+    result = result.replace(pattern, "").trim();
+  }
+  // Remove leading punctuation after removing name
+  return result.replace(/^[、,，\s]+/, "").trim();
+}
 
 async function getOrCreateConversation(event: NormalizedMessageEvent) {
   return prisma.conversation.upsert({
@@ -89,141 +107,242 @@ async function saveIntervention(
   });
 }
 
-export async function processMessage(
-  event: NormalizedMessageEvent,
-  adapter: ChannelAdapter
-): Promise<void> {
-  // 1. Get or create conversation
-  const conversation = await getOrCreateConversation(event);
+async function saveBotMessage(conversationId: string, text: string) {
+  await prisma.message.create({
+    data: {
+      conversationId,
+      senderId: "umeko-bot",
+      senderRole: "bot",
+      senderDisplayName: BOT_NAME,
+      text,
+      timestamp: new Date(),
+      detectedIntent: "normal",
+      conflictScore: 0,
+    },
+  });
+}
 
-  // 2. Safety check first
+async function sendResponse(
+  adapter: ChannelAdapter,
+  event: NormalizedMessageEvent,
+  text: string
+) {
+  if (event.replyToken) {
+    await adapter.sendReply(event.replyToken, text);
+  } else {
+    await adapter.sendPush(event.externalThreadId, text);
+  }
+}
+
+async function handleDirectMessage(
+  event: NormalizedMessageEvent,
+  adapter: ChannelAdapter,
+  conversation: { id: string; contextType: string }
+): Promise<void> {
+  // In DM, always respond
+
+  // 1. Safety check
   const safetyResult = await checkSafety(event.text);
   if (!safetyResult.isSafe) {
     const safetyResponse = getSafetyResponse();
-    const savedMsg = await saveMessage(
-      conversation.id,
-      event,
-      "normal",
-      100
-    );
-    await saveIntervention(
-      conversation.id,
-      savedMsg.id,
-      "safety_escalation",
-      100,
-      `Safety flag: ${safetyResult.category}`,
-      safetyResponse
-    );
-    if (event.replyToken) {
-      await adapter.sendReply(event.replyToken, safetyResponse);
-    }
+    const savedMsg = await saveMessage(conversation.id, event, "normal", 100);
+    await saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyResult.category}`, safetyResponse);
+    await sendResponse(adapter, event, safetyResponse);
     return;
   }
 
-  // 3. Detect intent
+  // 2. Detect intent
   const intentResult = await detectIntent(event.text);
 
-  // 4. Score conflict
-  const recentMessages = await getRecentMessages(conversation.id);
-  const conflictResult = await scoreConflict(event.text, recentMessages);
+  // 3. Save message
+  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, 0);
 
-  // 5. Save message
-  const savedMessage = await saveMessage(
-    conversation.id,
-    event,
-    intentResult.intent,
-    conflictResult.score
-  );
-
-  // 6. Handle based on intent
-  let responseText: string | null = null;
+  let responseText: string;
   let triggerType: string | null = null;
 
   switch (intentResult.intent) {
     case "rewrite_request": {
-      // Find the previous message to rewrite
-      const prevMessages = await prisma.message.findMany({
-        where: {
-          conversationId: conversation.id,
-          senderRole: "human",
-          id: { not: savedMessage.id },
-        },
-        orderBy: { timestamp: "desc" },
-        take: 1,
-      });
-      if (prevMessages.length > 0) {
-        responseText = await rewriteMessage(
-          prevMessages[0].text,
-          "soft",
-          conversation.contextType
-        );
-        triggerType = "manual_rewrite";
+      // In DM, rewrite the text that follows the request
+      // Or if just "柔らかくして", ask what to rewrite
+      const textToRewrite = stripBotName(event.text)
+        .replace(/言い換えて|柔らかくして|やわらかくして|角が立たないように|丁寧にして|書き直して|リライトして/g, "")
+        .trim();
+
+      if (textToRewrite.length > 0) {
+        responseText = await rewriteMessage(textToRewrite, "soft", conversation.contextType);
+      } else {
+        // Check previous message
+        const prevMessages = await prisma.message.findMany({
+          where: { conversationId: conversation.id, senderRole: "human", id: { not: savedMessage.id } },
+          orderBy: { timestamp: "desc" },
+          take: 1,
+        });
+        if (prevMessages.length > 0) {
+          responseText = await rewriteMessage(prevMessages[0].text, "soft", conversation.contextType);
+        } else {
+          responseText = "言い換えたいメッセージを送ってください。\n\n例：「柔らかくして なんでまだできてないの？」";
+        }
       }
+      triggerType = "manual_rewrite";
       break;
     }
 
     case "summarize_request": {
       const msgs = await getRecentMessages(conversation.id, 20);
-      responseText = await generateSummary(msgs, "summary");
+      if (msgs.length < 3) {
+        responseText = "まだ会話が少ないので、もう少しやり取りしてから「まとめて」と言ってみてください。";
+      } else {
+        responseText = await generateSummary(msgs, "summary");
+      }
       triggerType = "manual_summary";
       break;
     }
 
     case "mediation_request": {
       const msgs = await getRecentMessages(conversation.id);
-      responseText = await generateMediation(
-        msgs,
-        conversation.contextType,
-        "ユーザーからの仲介リクエスト"
-      );
+      responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト");
       triggerType = "auto_mediation";
       break;
     }
 
     default: {
-      // Auto-mediate if conflict score is high
-      if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
-        const msgs = await getRecentMessages(conversation.id);
-        responseText = await generateMediation(
-          msgs,
-          conversation.contextType,
-          conflictResult.reason
-        );
-        triggerType = "auto_mediation";
-      }
+      // Normal conversation - respond as a helpful facilitator
+      const recentMsgs = await getRecentMessages(conversation.id, 5);
+      const context = recentMsgs.length > 1
+        ? `\n\n直近の会話:\n${recentMsgs.slice(0, -1).join("\n")}`
+        : "";
+
+      responseText = await chatCompletion(
+        getMediatorPromptForContext(conversation.contextType) +
+          "\n\nあなたの名前は「うめこ」です。会話をやさしく整理するAIアシスタントです。" +
+          "\nユーザーからの相談や質問に、やさしく簡潔に答えてください。" +
+          "\n言い換えを頼まれたら言い換え、まとめを頼まれたらまとめ、相談には共感しつつアドバイスしてください。" +
+          "\n回答は200文字以内で、自然な日本語で。",
+        `${context}\n\nユーザー: ${event.text}`
+      );
       break;
     }
   }
 
-  // 7. Send response and save intervention
-  if (responseText && triggerType) {
-    await saveIntervention(
-      conversation.id,
-      savedMessage.id,
-      triggerType,
-      conflictResult.score,
-      conflictResult.reason,
-      responseText
-    );
+  if (triggerType) {
+    await saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, responseText);
+  }
 
-    if (event.replyToken) {
-      await adapter.sendReply(event.replyToken, responseText);
-    } else {
-      await adapter.sendPush(event.externalThreadId, responseText);
+  await sendResponse(adapter, event, responseText);
+  await saveBotMessage(conversation.id, responseText);
+}
+
+async function handleGroupMessage(
+  event: NormalizedMessageEvent,
+  adapter: ChannelAdapter,
+  conversation: { id: string; contextType: string }
+): Promise<void> {
+  const mentioned = isBotMentioned(event.text);
+  const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
+
+  // 1. Safety check
+  const safetyResult = await checkSafety(event.text);
+  if (!safetyResult.isSafe) {
+    const safetyResponse = getSafetyResponse();
+    const savedMsg = await saveMessage(conversation.id, event, "normal", 100);
+    await saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyResult.category}`, safetyResponse);
+    await sendResponse(adapter, event, safetyResponse);
+    return;
+  }
+
+  // 2. Detect intent
+  const intentResult = await detectIntent(textForProcessing);
+
+  // 3. Score conflict
+  const recentMessages = await getRecentMessages(conversation.id);
+  const conflictResult = await scoreConflict(event.text, recentMessages);
+
+  // 4. Save message
+  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, conflictResult.score);
+
+  // 5. Determine if we should respond
+  let responseText: string | null = null;
+  let triggerType: string | null = null;
+
+  // If bot is mentioned, always respond
+  if (mentioned) {
+    switch (intentResult.intent) {
+      case "rewrite_request": {
+        const cleanText = textForProcessing
+          .replace(/言い換えて|柔らかくして|やわらかくして|角が立たないように|丁寧にして|書き直して|リライトして/g, "")
+          .trim();
+
+        if (cleanText.length > 0) {
+          responseText = await rewriteMessage(cleanText, "soft", conversation.contextType);
+        } else {
+          const prevMessages = await prisma.message.findMany({
+            where: { conversationId: conversation.id, senderRole: "human", id: { not: savedMessage.id } },
+            orderBy: { timestamp: "desc" },
+            take: 1,
+          });
+          if (prevMessages.length > 0) {
+            responseText = await rewriteMessage(prevMessages[0].text, "soft", conversation.contextType);
+          }
+        }
+        triggerType = "manual_rewrite";
+        break;
+      }
+
+      case "summarize_request": {
+        const msgs = await getRecentMessages(conversation.id, 20);
+        responseText = await generateSummary(msgs, "summary");
+        triggerType = "manual_summary";
+        break;
+      }
+
+      case "mediation_request": {
+        const msgs = await getRecentMessages(conversation.id);
+        responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト");
+        triggerType = "auto_mediation";
+        break;
+      }
+
+      default: {
+        // Mentioned but normal intent - respond conversationally
+        const msgs = await getRecentMessages(conversation.id, 5);
+        responseText = await chatCompletion(
+          getMediatorPromptForContext(conversation.contextType) +
+            "\n\nあなたの名前は「うめこ」です。LINEグループで会話をやさしく整理するAIです。" +
+            "\nグループの会話の中で話しかけられました。簡潔に、やさしく答えてください。" +
+            "\n回答は200文字以内で。",
+          `グループの直近の会話:\n${msgs.join("\n")}\n\n（あなたへの呼びかけ）: ${textForProcessing}`
+        );
+        break;
+      }
     }
+  } else {
+    // Not mentioned - only auto-mediate if conflict score is high
+    if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
+      const msgs = await getRecentMessages(conversation.id);
+      responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason);
+      triggerType = "auto_mediation";
+    }
+  }
 
-    // Save bot message
-    await prisma.message.create({
-      data: {
-        conversationId: conversation.id,
-        senderId: "aida-bot",
-        senderRole: "bot",
-        senderDisplayName: "Aida",
-        text: responseText,
-        timestamp: new Date(),
-        detectedIntent: "normal",
-        conflictScore: 0,
-      },
-    });
+  // 6. Send response
+  if (responseText) {
+    if (triggerType) {
+      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictResult.score, conflictResult.reason, responseText);
+    }
+    await sendResponse(adapter, event, responseText);
+    await saveBotMessage(conversation.id, responseText);
+  }
+}
+
+export async function processMessage(
+  event: NormalizedMessageEvent,
+  adapter: ChannelAdapter
+): Promise<void> {
+  const conversation = await getOrCreateConversation(event);
+
+  if (event.isDirectMessage) {
+    await handleDirectMessage(event, adapter, conversation);
+  } else {
+    await handleGroupMessage(event, adapter, conversation);
   }
 }

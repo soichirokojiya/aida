@@ -9,6 +9,7 @@ export interface NormalizedMessageEvent {
   text: string;
   timestamp: Date;
   replyToken?: string;
+  isDirectMessage: boolean;
   rawEvent: unknown;
 }
 
