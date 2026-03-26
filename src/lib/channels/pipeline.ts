@@ -12,6 +12,32 @@ import { getMediatorPromptForContext } from "../prompts/system";
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /umeko/i];
 
+const CHAT_SYSTEM_PROMPT = `あなたの名前は「うめこ」です。LINEで使える会話サポートAIです。
+
+性格:
+- やさしくて穏やか
+- 親しみやすいけど馴れ馴れしくない
+- 自然な日本語で話す
+- 相手の名前やIDは呼ばない（「あなた」も極力使わない）
+
+普通の会話のとき:
+- 挨拶には挨拶で返す（「おはようございます！」など）
+- 雑談には自然に付き合う
+- 短く、テンポよく返す
+- 「いったん整理しますね」などの仲介モードに入らない
+- ファシリテーターとして振る舞わない
+
+相談や依頼があったとき:
+- 言い換えを頼まれたら言い換える
+- まとめを頼まれたらまとめる
+- 悩みには共感しつつ、具体的な提案をする
+
+重要:
+- 回答は150文字以内
+- 絵文字は控えめに（1つまで）
+- 説教しない
+- 上から目線にならない`;
+
 const AUTO_MEDIATION_THRESHOLD = Number(
   process.env.CONFLICT_THRESHOLD || "50"
 );
@@ -206,18 +232,14 @@ async function handleDirectMessage(
     }
 
     default: {
-      // Normal conversation - respond as a helpful facilitator
+      // Normal conversation
       const recentMsgs = await getRecentMessages(conversation.id, 5);
       const context = recentMsgs.length > 1
         ? `\n\n直近の会話:\n${recentMsgs.slice(0, -1).join("\n")}`
         : "";
 
       responseText = await chatCompletion(
-        getMediatorPromptForContext(conversation.contextType) +
-          "\n\nあなたの名前は「うめこ」です。会話をやさしく整理するAIアシスタントです。" +
-          "\nユーザーからの相談や質問に、やさしく簡潔に答えてください。" +
-          "\n言い換えを頼まれたら言い換え、まとめを頼まれたらまとめ、相談には共感しつつアドバイスしてください。" +
-          "\n回答は200文字以内で、自然な日本語で。",
+        CHAT_SYSTEM_PROMPT,
         `${context}\n\nユーザー: ${event.text}`
       );
       break;
@@ -306,10 +328,7 @@ async function handleGroupMessage(
         // Mentioned but normal intent - respond conversationally
         const msgs = await getRecentMessages(conversation.id, 5);
         responseText = await chatCompletion(
-          getMediatorPromptForContext(conversation.contextType) +
-            "\n\nあなたの名前は「うめこ」です。LINEグループで会話をやさしく整理するAIです。" +
-            "\nグループの会話の中で話しかけられました。簡潔に、やさしく答えてください。" +
-            "\n回答は200文字以内で。",
+          CHAT_SYSTEM_PROMPT,
           `グループの直近の会話:\n${msgs.join("\n")}\n\n（あなたへの呼びかけ）: ${textForProcessing}`
         );
         break;
