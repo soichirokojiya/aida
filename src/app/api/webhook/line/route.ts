@@ -13,7 +13,6 @@ function validateSignature(body: string, signature: string): boolean {
     .createHmac("SHA256", secret)
     .update(body)
     .digest("base64");
-  console.log("Signature validation:", { expected: hash, received: signature, match: hash === signature });
   return hash === signature;
 }
 
@@ -21,25 +20,25 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-line-signature") || "";
 
-  // Validate LINE signature
   if (!validateSignature(rawBody, signature)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   const body = JSON.parse(rawBody);
 
-  // LINE verification request sends empty events
   if (!body.events || body.events.length === 0) {
     return NextResponse.json({ status: "ok" });
   }
 
-  // Process each message event
   const events = lineAdapter.normalizeEvents(body);
 
+  // Must await - Vercel serverless functions terminate after response
   for (const event of events) {
-    processMessage(event, lineAdapter).catch((err) => {
+    try {
+      await processMessage(event, lineAdapter);
+    } catch (err) {
       console.error("Error processing message:", err);
-    });
+    }
   }
 
   return NextResponse.json({ status: "ok" });
