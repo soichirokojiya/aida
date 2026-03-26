@@ -1,4 +1,5 @@
 import Link from "next/link";
+/* eslint-disable @next/next/no-img-element */
 
 const LINE_ADD_URL = "https://lin.ee/XXXXXXXXX"; // TODO: LINE友だち追加URLに差し替え
 
@@ -72,8 +73,8 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-teal-100/40 via-transparent to-transparent" />
         <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-16 md:pt-32 md:pb-24 text-center">
           {/* Avatar */}
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-8 rounded-full bg-gradient-to-br from-teal-400 to-sky-400 flex items-center justify-center shadow-lg">
-            <span className="text-3xl md:text-4xl">&#x1F338;</span>
+          <div className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-8 rounded-full overflow-hidden shadow-lg border-4 border-white">
+            <img src="/umeko-avatar.png" alt="うめこ" className="w-full h-full object-cover" />
           </div>
 
           <h1 className="text-3xl md:text-5xl font-bold text-gray-800 leading-tight mb-4 tracking-tight">
@@ -377,8 +378,8 @@ export default function LandingPage() {
       <section className="relative py-20 md:py-28 px-6 bg-gradient-to-br from-teal-50 via-white to-sky-50 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-teal-100/30 via-transparent to-transparent" />
         <div className="relative max-w-2xl mx-auto text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-teal-400 to-sky-400 flex items-center justify-center shadow-lg">
-            <span className="text-2xl">&#x1F338;</span>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full overflow-hidden shadow-lg border-4 border-white">
+            <img src="/umeko-avatar.png" alt="うめこ" className="w-full h-full object-cover" />
           </div>
 
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
@@ -405,8 +406,8 @@ export default function LandingPage() {
       <footer className="py-8 px-6 bg-white border-t border-gray-100">
         <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-sky-400 flex items-center justify-center">
-              <span className="text-xs">&#x1F338;</span>
+            <div className="w-7 h-7 rounded-full overflow-hidden">
+              <img src="/umeko-avatar.png" alt="うめこ" className="w-full h-full object-cover" />
             </div>
             <span className="text-sm font-semibold text-gray-700">うめこ</span>
           </div>
