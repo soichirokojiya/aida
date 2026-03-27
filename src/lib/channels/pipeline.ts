@@ -138,37 +138,15 @@ async function saveMessage(
   });
 }
 
-async function resolveDisplayName(event: NormalizedMessageEvent): Promise<string | undefined> {
-  if (event.senderDisplayName) return event.senderDisplayName;
-  if (event.senderId === "unknown") return undefined;
 
-  try {
-    let name: string | null = null;
-    if (!event.isDirectMessage) {
-      name = await getGroupMemberDisplayName(event.externalThreadId, event.senderId);
-    }
-    if (!name) {
-      name = await getUserDisplayName(event.senderId);
-    }
-    return name || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-// In-memory cache for display names (per request lifecycle)
+// Resolve display name from LINE API (cached per request)
 const nameCache = new Map<string, string>();
 
-async function resolveNameForLLM(senderId: string, threadId: string, isDm: boolean): Promise<string | null> {
+async function resolveName(senderId: string, threadId: string): Promise<string | null> {
   if (nameCache.has(senderId)) return nameCache.get(senderId)!;
   try {
-    let name: string | null = null;
-    if (!isDm) {
-      name = await getGroupMemberDisplayName(threadId, senderId);
-    }
-    if (!name) {
-      name = await getUserDisplayName(senderId);
-    }
+    const name = await getGroupMemberDisplayName(threadId, senderId)
+      || await getUserDisplayName(senderId);
     if (name) nameCache.set(senderId, name);
     return name;
   } catch {
@@ -179,7 +157,7 @@ async function resolveNameForLLM(senderId: string, threadId: string, isDm: boole
 async function getRecentMessages(
   conversationId: string,
   limit = 10
-): Promise<string[]> {
+): Promise<{ formatted: string[]; memberNames: string[] }> {
   const messages = await prisma.message.findMany({
     where: { conversationId },
     orderBy: { timestamp: "desc" },
@@ -189,16 +167,35 @@ async function getRecentMessages(
   const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
   const threadId = conv?.externalThreadId || "";
 
-  const result: string[] = [];
+  // Resolve real names for context, but use anonymous labels in conversation
+  const senderMap = new Map<string, { label: string; realName: string | null }>();
+  let idx = 0;
+  const labels = ["相手1", "相手2", "相手3", "相手4", "相手5"];
+
+  const formatted: string[] = [];
   for (const m of messages.reverse()) {
     if (m.senderRole === "bot") {
-      result.push(`うめこ: ${m.text}`);
-    } else {
-      const name = await resolveNameForLLM(m.senderId, threadId, false);
-      result.push(name ? `${name}: ${m.text}` : m.text);
+      formatted.push(`（自分の前回の発言）: ${m.text}`);
+      continue;
+    }
+    if (!senderMap.has(m.senderId)) {
+      const realName = await resolveName(m.senderId, threadId);
+      senderMap.set(m.senderId, { label: labels[idx % labels.length], realName });
+      idx++;
+    }
+    const { label } = senderMap.get(m.senderId)!;
+    formatted.push(`${label}: ${m.text}`);
+  }
+
+  // Build member name list for LLM context
+  const memberNames: string[] = [];
+  for (const { label, realName } of senderMap.values()) {
+    if (realName) {
+      memberNames.push(`${label} = ${realName}`);
     }
   }
-  return result;
+
+  return { formatted, memberNames };
 }
 
 async function saveIntervention(
@@ -304,7 +301,7 @@ async function handleDirectMessage(
     }
 
     case "summarize_request": {
-      const msgs = await getRecentMessages(conversation.id, 20);
+      const { formatted: msgs } = await getRecentMessages(conversation.id, 20);
       if (msgs.length < 3) {
         responseText = "まだ会話が少ないので、もう少しやり取りしてから「まとめて」と言ってみてください。";
       } else {
@@ -315,7 +312,7 @@ async function handleDirectMessage(
     }
 
     case "mediation_request": {
-      const msgs = await getRecentMessages(conversation.id);
+      const { formatted: msgs } = await getRecentMessages(conversation.id);
       responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト");
       triggerType = "auto_mediation";
       break;
@@ -323,7 +320,7 @@ async function handleDirectMessage(
 
     default: {
       // Normal conversation
-      const recentMsgs = await getRecentMessages(conversation.id, 5);
+      const { formatted: recentMsgs } = await getRecentMessages(conversation.id, 5);
       const context = recentMsgs.length > 1
         ? `\n\n直近の会話:\n${recentMsgs.slice(0, -1).join("\n")}`
         : "";
@@ -368,15 +365,19 @@ async function handleGroupMessage(
   }
 
   // 2. Parallel: intent + conflict + member count + recent messages
-  const [intentResult, recentMessages, memberCount] = await Promise.all([
+  const [intentResult, recentData, memberCount] = await Promise.all([
     detectIntent(textForProcessing),
     getRecentMessages(conversation.id),
     getGroupMemberCount(event.externalThreadId),
   ]);
+  const { formatted: recentMessages, memberNames } = recentData;
   const conflictResult = await scoreConflict(event.text, recentMessages);
-  const groupContext = memberCount
-    ? `（このグループは${memberCount}人。うめこを除くと${memberCount - 1}人の会話）`
+  const memberContext = memberNames.length > 0
+    ? `（メンバー情報: ${memberNames.join("、")}。ただし応答に名前を使わないこと）`
     : "";
+  const groupContext = (memberCount
+    ? `（このグループは${memberCount}人）`
+    : "") + memberContext;
 
   // 4. Save message
   const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, conflictResult.score);
@@ -410,22 +411,22 @@ async function handleGroupMessage(
       }
 
       case "summarize_request": {
-        const msgs = await getRecentMessages(conversation.id, 20);
+        const { formatted: msgs } = await getRecentMessages(conversation.id, 20);
         responseText = await generateSummary(msgs, "summary");
         triggerType = "manual_summary";
         break;
       }
 
       case "mediation_request": {
-        const msgs = await getRecentMessages(conversation.id);
-        responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト");
+        const { formatted: msgs } = await getRecentMessages(conversation.id);
+        responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト " + groupContext);
         triggerType = "auto_mediation";
         break;
       }
 
       default: {
         // Mentioned but normal intent - respond conversationally
-        const msgs = await getRecentMessages(conversation.id, 5);
+        const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
         responseText = await chatCompletion(
           CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
           `グループの直近の会話:\n${msgs.join("\n")}\n\n（あなたへの呼びかけ）: ${textForProcessing}`
@@ -436,7 +437,6 @@ async function handleGroupMessage(
   } else {
     // Not mentioned - only auto-mediate if conflict score is high
     if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
-      // Count recent auto-interventions (last 30 minutes)
       const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
       const recentInterventions = await prisma.intervention.findMany({
         where: {
@@ -452,9 +452,8 @@ async function handleGroupMessage(
       const cooldownMs = 5 * 60 * 1000;
       const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
 
-      // Max 2 auto-interventions per 30 min. After that, only respond if called.
       if (interventionCount < 2 && cooledDown) {
-        const msgs = await getRecentMessages(conversation.id);
+        const { formatted: msgs } = await getRecentMessages(conversation.id);
         const stage = interventionCount === 0
           ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
           : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
@@ -481,14 +480,6 @@ export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
-  // Parallel: resolve display name + billing check + conversation
-  const [displayName] = await Promise.all([
-    resolveDisplayName(event),
-  ]);
-  if (displayName) {
-    event.senderDisplayName = displayName;
-  }
-
   // Check billing status for DM (group messages always work)
   if (event.isDirectMessage) {
     const active = await isUserActive(event.senderId);
