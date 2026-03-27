@@ -31,20 +31,26 @@ async function handleFollow(event: RawLineEvent) {
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
-  await prisma.lineUser.upsert({
-    where: { lineUserId: userId },
-    update: {
-      unfollowedAt: null,
-      // Re-follow: reset trial if expired, keep active if already paid
-      ...(await prisma.lineUser.findUnique({ where: { lineUserId: userId } })
-        .then(u => u?.billingStatus === "active" ? {} : { billingStatus: "trial", trialEndsAt })),
-    },
-    create: {
-      lineUserId: userId,
-      trialEndsAt,
-      billingStatus: "trial",
-    },
-  });
+  const existing = await prisma.lineUser.findUnique({ where: { lineUserId: userId } });
+
+  if (existing) {
+    // Re-follow: clear unfollow, reset trial if not already paid
+    await prisma.lineUser.update({
+      where: { lineUserId: userId },
+      data: {
+        unfollowedAt: null,
+        ...(existing.billingStatus === "active" ? {} : { billingStatus: "trial", trialEndsAt }),
+      },
+    });
+  } else {
+    await prisma.lineUser.create({
+      data: {
+        lineUserId: userId,
+        trialEndsAt,
+        billingStatus: "trial",
+      },
+    });
+  }
 
   // Welcome message is handled by LINE Official Account's greeting message
 }
@@ -85,7 +91,7 @@ export async function POST(request: NextRequest) {
     try {
       await processMessage(event, lineAdapter);
     } catch (err) {
-      console.error("Error processing message:", err);
+      console.error("Error processing message:", err instanceof Error ? err.stack : err);
     }
   }
 
