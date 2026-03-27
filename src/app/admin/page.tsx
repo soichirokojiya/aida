@@ -18,6 +18,13 @@ export default async function ConversationsPage() {
     },
   });
 
+  // Get member counts per group from GroupMembership
+  const groupMemberCounts = await prisma.groupMembership.groupBy({
+    by: ["groupId"],
+    _count: true,
+  });
+  const memberCountMap = new Map(groupMemberCounts.map(g => [g.groupId, g._count]));
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">会話一覧</h1>
@@ -26,6 +33,7 @@ export default async function ConversationsPage() {
           <TableRow>
             <TableHead>スレッドID</TableHead>
             <TableHead>チャネル</TableHead>
+            <TableHead>参加人数</TableHead>
             <TableHead>最新メッセージ</TableHead>
             <TableHead>メッセージ数</TableHead>
             <TableHead>介入数</TableHead>
@@ -48,6 +56,11 @@ export default async function ConversationsPage() {
                 <TableCell>
                   <Badge variant="outline">{conv.channelType}</Badge>
                 </TableCell>
+                <TableCell className="text-sm">
+                  {memberCountMap.get(conv.externalThreadId)
+                    ? `${(memberCountMap.get(conv.externalThreadId) || 0) + 1}人`
+                    : conv.channelType === "line" ? "DM" : "-"}
+                </TableCell>
                 <TableCell className="max-w-xs truncate text-sm">
                   {lastMsg?.text || "-"}
                 </TableCell>
@@ -61,7 +74,7 @@ export default async function ConversationsPage() {
           })}
           {conversations.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={7} className="text-center text-gray-400 py-8">
                 まだ会話がありません
               </TableCell>
             </TableRow>
