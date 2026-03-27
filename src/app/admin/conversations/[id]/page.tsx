@@ -32,7 +32,7 @@ export default async function ConversationDetailPage({
         <h1 className="text-2xl font-bold mb-2">会話詳細</h1>
         <div className="flex gap-2 text-sm text-gray-500">
           <Badge variant="outline">{conversation.channelType}</Badge>
-          <span className="font-mono text-xs">{conversation.externalThreadId.slice(0, 12)}...</span>
+          <span className="font-mono text-xs">{conversation.externalThreadId}</span>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export default async function ConversationDetailPage({
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium text-xs">
-                    {isBot ? "うめこ" : msg.senderId.slice(0, 8)}
+                    {isBot ? "うめこ" : msg.senderId}
                   </span>
                   <span className="text-xs text-gray-400">
                     {msg.timestamp.toLocaleString("ja-JP")}

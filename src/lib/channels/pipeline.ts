@@ -548,11 +548,27 @@ export async function processMessage(
     }
   }
 
-  // Track last active
+  // Track last active + group membership (non-blocking)
   prisma.lineUser.updateMany({
     where: { lineUserId: event.senderId },
     data: { lastActiveAt: new Date() },
   }).catch(() => {});
+
+  if (!event.isDirectMessage && event.senderId !== "unknown") {
+    prisma.groupMembership.upsert({
+      where: {
+        lineUserId_groupId: {
+          lineUserId: event.senderId,
+          groupId: event.externalThreadId,
+        },
+      },
+      update: { lastSeenAt: new Date() },
+      create: {
+        lineUserId: event.senderId,
+        groupId: event.externalThreadId,
+      },
+    }).catch(() => {});
+  }
 
   const conversation = await getOrCreateConversation(event);
 

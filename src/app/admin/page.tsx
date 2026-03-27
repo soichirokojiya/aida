@@ -42,7 +42,7 @@ export default async function ConversationsPage() {
                     href={`/admin/conversations/${conv.id}`}
                     className="text-blue-600 hover:underline font-mono text-xs"
                   >
-                    {conv.id.slice(0, 8)}...
+                    {conv.id}
                   </Link>
                 </TableCell>
                 <TableCell>

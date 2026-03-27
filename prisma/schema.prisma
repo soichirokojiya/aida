@@ -102,3 +102,15 @@ model LineUser {
   @@index([billingStatus])
   @@index([trialEndsAt])
 }
+
+model GroupMembership {
+  id             String   @id @default(cuid())
+  lineUserId     String
+  groupId        String
+  firstSeenAt    DateTime @default(now())
+  lastSeenAt     DateTime @default(now())
+
+  @@unique([lineUserId, groupId])
+  @@index([lineUserId])
+  @@index([groupId])
+}
