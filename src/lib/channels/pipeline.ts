@@ -17,10 +17,10 @@ import { getConversationMemory, maybeUpdateSummary } from "../memory/summary";
 const BOT_NAME = "うめこ";
 
 function getJapanTimeContext(): string {
-  const now = new Date(Date.now() + 9 * 60 * 60 * 1000); // UTC+9
-  const hour = now.getUTCHours();
+  const jst = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour: "numeric", hour12: false });
+  const hour = parseInt(jst, 10);
   const greeting = hour < 5 ? "深夜" : hour < 10 ? "朝" : hour < 12 ? "午前中" : hour < 17 ? "午後" : hour < 21 ? "夜" : "夜遅く";
-  return `（現在の日本時間: ${hour}時頃、${greeting}）`;
+  return `（現在の日本時間: ${hour}時頃、${greeting}。挨拶はこの時間帯に合わせること）`;
 }
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
 
@@ -42,11 +42,12 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 - 個人的な質問にはキャラとして自然に答える（「AIなので〜」とは絶対言わない）
 
 ## うめこのサービス情報（聞かれたらこの情報だけ正確に答える）
-- DMプラン: 月額490円。1対1でうめこと話せる
-- グループ利用権: 月額980円（1グループ）。誰か1人が払えばグループ全員使える
-- DMとグループは独立。片方だけでも使える
-- 無料トライアル: 最初の1ヶ月は無料
-- 解約はいつでもOK
+- パーソナルプラン: 月額490円。1対1でうめこと話せる
+- LINEグループプラン: 月額980円（1LINEグループ）。誰か1人が払えばグループ全員使える
+- パーソナルとLINEグループは独立。片方だけでも使える
+- 無料トライアル: 最初の1ヶ月は無料。全機能使える
+- 解約: うめこに「解約したい」と言えば手続きページのリンクを送る。ブロックだけでは課金は止まらないので、必ず解約手続きが必要
+- 運営への問い合わせ: info@cfac.co.jp に連絡してもらう
 - LINE公式アカウント。サイトは umeko.life
 - 年間プラン、一括払い、法人プランは存在しない
 - 【重要】ここに書いていないプランや料金は存在しない。聞かれたら「今はこのプランだけだよ」と答える
@@ -314,10 +315,33 @@ async function handleDirectMessage(
     return;
   }
 
-  // 2. Detect intent (rule-based first, skip LLM if confident)
+  // 2. Check for cancellation request
+  const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel/i;
+  if (cancelKeywords.test(event.text)) {
+    // Find user's subscriptions and generate portal link
+    const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
+    const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+
+    const subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId;
+    if (subId) {
+      const { createPortalUrl } = await import("../billing/portal");
+      const portalUrl = await createPortalUrl(subId);
+      if (portalUrl) {
+        await saveMessage(conversation.id, event, "normal", 0);
+        await sendResponse(adapter, event, `わかったよ。ここから手続きできます。\n\n▼ 契約管理ページ\n${portalUrl}\n\n何か困ったことがあれば info@cfac.co.jp に連絡してみてね。`);
+        return;
+      }
+    }
+    // No subscription found
+    await saveMessage(conversation.id, event, "normal", 0);
+    await sendResponse(adapter, event, "今は有料プランに登録していないみたいだよ。何か困っていることがあれば info@cfac.co.jp に連絡してみてね。");
+    return;
+  }
+
+  // 3. Detect intent (rule-based first, skip LLM if confident)
   const intentResult = await detectIntent(event.text);
 
-  // 3. Save message (don't await - do after response)
+  // 4. Save message
   const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, 0);
 
   let responseText: string;

@@ -6,10 +6,10 @@ export function getDueReminderMessage(dmCheckoutUrl: string): string {
 
 引き続き話したいなと思ってもらえたら、ここから登録してもらえるとうれしいです。
 
-▼ DMプラン（月額¥490）
+▼ パーソナルプラン（月額490円）
 ${dmCheckoutUrl}
 
-グループで使いたい場合は、グループ内で「うめこ」って呼んでくれたら、そこから登録できるよ。
+LINEグループで使いたい場合は、グループ内で「うめこ」って呼んでくれたら、そこから登録できるよ。
 
 またいつでも気軽に話しかけてね。`;
 }
@@ -19,16 +19,16 @@ export function getDmExpiredMessage(dmCheckoutUrl: string): string {
 
 また話したいなって思ったら、ここから登録してもらえるとうれしいです。
 
-▼ DMプラン（月額¥490）
+▼ パーソナルプラン（月額490円）
 ${dmCheckoutUrl}`;
 }
 
 export function getGroupExpiredMessage(groupCheckoutUrl: string): string {
-  return `このグループではまだうめこが使えない状態なんだ。
+  return `このLINEグループではまだうめこが使えない状態なんだ。
 
 誰か1人が登録してくれれば、グループのみんなが使えるようになるよ。
 
-▼ グループ利用権（月額¥980）
+▼ LINEグループプラン（月額980円）
 ${groupCheckoutUrl}`;
 }
 
@@ -38,7 +38,7 @@ export function getWelcomeMessage(): string {
 会話をやさしく整理するお手伝いをしています。
 
 使い方はかんたん：
-・グループに招待すれば、会話を見守ります
+・LINEグループに招待すれば、会話を見守ります
 ・1対1で話しかければ、相談相手になります
 ・「柔らかくして」「まとめて」と言えばOK
 

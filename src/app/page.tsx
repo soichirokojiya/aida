@@ -66,8 +66,8 @@ export default function LandingPage() {
 
               <LineButton>LINEで友だち追加する</LineButton>
               <p className="mt-3 text-sm text-gray-500">
-                <span className="font-medium text-teal-600">1ヶ月間無料</span>
-                　その後 DM¥490 / グループ¥980
+                <span className="font-medium text-teal-600">1ヶ月無料</span>
+                　その後 月額490円〜
               </p>
             </div>
 
@@ -350,7 +350,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* DM */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <p className="text-teal-600 font-medium text-sm mb-1">DMプラン</p>
+              <p className="text-teal-600 font-medium text-sm mb-1">パーソナルプラン</p>
               <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
               <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
               <ul className="space-y-2 text-base text-gray-600 mb-5">
@@ -359,21 +359,21 @@ export default function LandingPage() {
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>モヤモヤの整理</li>
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>回数無制限</li>
               </ul>
-              <p className="text-xs text-gray-400">グループなしでもDMだけで使えます</p>
+              <p className="text-xs text-gray-400">LINEグループプランなしでも使えます</p>
             </div>
 
             {/* グループ */}
             <div className="bg-white rounded-2xl p-6 border border-teal-200 shadow-sm">
-              <p className="text-teal-600 font-medium text-sm mb-1">グループ利用権</p>
+              <p className="text-teal-600 font-medium text-sm mb-1">LINEグループプラン</p>
               <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1グループ</span></p>
-              <p className="text-gray-500 text-sm mb-5">グループにうめこを招待できます</p>
+              <p className="text-gray-500 text-sm mb-5">LINEグループにうめこを招待できます</p>
               <ul className="space-y-2 text-base text-gray-600 mb-5">
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>会話の見守り・整理</li>
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>自動介入</li>
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>1人が払えばグループ全員使える</li>
                 <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>回数無制限</li>
               </ul>
-              <p className="text-xs text-gray-400">DMプランなしでもグループだけで使えます</p>
+              <p className="text-xs text-gray-400">パーソナルプランなしでも使えます</p>
             </div>
           </div>
 
@@ -431,7 +431,7 @@ export default function LandingPage() {
               },
               {
                 q: "無料期間が終わったらどうなりますか？",
-                a: "無料期間終了後は、DMもグループもうめこが応答しなくなります。DMプラン（月額¥490）に登録するとDMが、グループ利用権（月額¥980/グループ）に登録するとそのグループが使えるようになります。DMとグループは独立しているので、必要な方だけ契約できます。",
+                a: "無料期間終了後は、うめこが応答しなくなります。パーソナルプラン（月額490円）に登録すると1対1が、LINEグループプラン（月額980円/グループ）に登録するとそのグループが使えるようになります。それぞれ独立しているので、必要な方だけ契約できます。",
               },
               {
                 q: "グループに入れたら、すべての会話に返信しますか？",
@@ -443,7 +443,7 @@ export default function LandingPage() {
               },
               {
                 q: "解約はかんたんにできますか？",
-                a: "はい。いつでも解約できます。うめこに「解約したい」と話しかけるか、LINEをブロックするだけでOKです。解約後も、無料期間中と同じようにグループでの見守りは続きます。1対1の返答機能のみ停止されます。",
+                a: "はい。うめこに「解約したい」と話しかけると、解約手続きページのリンクが届きます。そこから簡単に手続きできます。なお、LINEをブロックしただけでは課金は停止されないのでご注意ください。",
               },
               {
                 q: "LINE以外でも使えますか？",
@@ -481,7 +481,7 @@ export default function LandingPage() {
           <LineButton>LINEで友だち追加する</LineButton>
           <p className="mt-3 text-sm text-gray-500">
             <span className="font-medium text-teal-600">1ヶ月間無料</span>
-            　その後 DM¥490 / グループ¥980・いつでも解約OK
+            　その後 月額490円〜・いつでも解約OK
           </p>
 
           {/* eslint-disable-next-line @next/next/no-img-element */}
