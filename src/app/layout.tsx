@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/favicon.jpg",
+    apple: "/favicon.jpg",
   },
   robots: {
     index: true,
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     siteName: "うめこ",
     images: [
       {
-        url: "/umeko-avatar.png",
+        url: "/umeko-logo.jpg",
         width: 1080,
         height: 1080,
         alt: "うめこ - 会話をやさしく整理するAI",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: "うめこ｜LINEで使える会話整理AI",
     description:
       "言いづらいことをやわらかく。すれ違いを少しずつ軽く。1ヶ月無料。",
-    images: ["/umeko-avatar.png"],
+    images: ["/umeko-logo.jpg"],
   },
   other: {
     "theme-color": "#0D9488",
@@ -130,7 +130,7 @@ gtag('config', 'G-4ZB48ZQL7E');`,
               "@type": "Organization",
               name: "うめこ",
               url: BASE_URL,
-              logo: `${BASE_URL}/umeko-avatar.png`,
+              logo: `${BASE_URL}/umeko-logo.jpg`,
               parentOrganization: {
                 "@type": "Organization",
                 name: "cfac",

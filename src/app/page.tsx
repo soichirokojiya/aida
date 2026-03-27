@@ -28,7 +28,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/umeko-avatar.png" alt="うめこ" className="w-8 h-8 rounded-full" />
+            <img src="/umeko-logo.jpg" alt="うめこ" className="w-8 h-8 rounded-full" />
             <span className="font-bold text-gray-800">うめこ</span>
           </div>
           <LineButton size="sm">友だち追加</LineButton>
@@ -45,7 +45,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/umeko-avatar.png" alt="うめこ" className="w-16 h-16 rounded-2xl shadow-md mb-6" />
+              <img src="/umeko-logo.jpg" alt="うめこ" className="w-16 h-16 rounded-2xl shadow-md mb-6" />
 
               <h1 className="text-3xl md:text-[2.75rem] font-bold text-gray-800 leading-[1.3] tracking-tight mb-5">
                 言いづらいことを、
@@ -282,7 +282,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-16">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/umeko-avatar.png" alt="うめこ" className="w-24 h-24 rounded-full shadow-lg mx-auto mb-6 border-4 border-teal-50" />
+            <img src="/umeko-logo.jpg" alt="うめこ" className="w-24 h-24 rounded-full shadow-lg mx-auto mb-6 border-4 border-teal-50" />
           </div>
 
           <div className="space-y-6 text-gray-600 text-base leading-[1.9]">
@@ -321,7 +321,7 @@ export default function LandingPage() {
           <div className="mt-16 bg-teal-50/60 rounded-2xl p-8 border border-teal-100/60">
             <div className="flex items-start gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/umeko-avatar.png" alt="" className="w-9 h-9 rounded-full flex-shrink-0 mt-0.5" />
+              <img src="/umeko-logo.jpg" alt="" className="w-9 h-9 rounded-full flex-shrink-0 mt-0.5" />
               <p className="text-gray-700 leading-[1.9]">
                 言いたいことがあるのに言い方がわからなくて黙ってしまったり、
                 つい強く言いすぎてあとから後悔したり。
@@ -466,7 +466,7 @@ export default function LandingPage() {
 
         <div className="relative max-w-2xl mx-auto text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/umeko-avatar.png" alt="うめこ" className="w-16 h-16 rounded-2xl shadow-md mx-auto mb-6" />
+          <img src="/umeko-logo.jpg" alt="うめこ" className="w-16 h-16 rounded-2xl shadow-md mx-auto mb-6" />
 
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             ことばに迷ったとき、
@@ -499,7 +499,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/umeko-avatar.png" alt="うめこ" className="w-6 h-6 rounded-full" />
+            <img src="/umeko-logo.jpg" alt="うめこ" className="w-6 h-6 rounded-full" />
             <span className="text-sm font-semibold text-gray-700">うめこ</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-gray-500">
