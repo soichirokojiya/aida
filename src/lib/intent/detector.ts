@@ -70,7 +70,8 @@ export async function detectIntent(text: string): Promise<IntentResult> {
   try {
     const llmResult = await chatCompletionJson<IntentResult>(
       INTENT_DETECTION_PROMPT,
-      text
+      text,
+      { purpose: "intent" }
     );
     return {
       intent: llmResult.intent || "normal",

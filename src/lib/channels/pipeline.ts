@@ -452,6 +452,12 @@ export async function processMessage(
     }
   }
 
+  // Track last active
+  prisma.lineUser.updateMany({
+    where: { lineUserId: event.senderId },
+    data: { lastActiveAt: new Date() },
+  }).catch(() => {});
+
   const conversation = await getOrCreateConversation(event);
 
   if (event.isDirectMessage) {

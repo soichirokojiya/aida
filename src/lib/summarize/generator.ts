@@ -12,19 +12,22 @@ export async function generateSummary(
   if (mode === "agreement_memo") {
     return chatCompletion(
       AGREEMENT_MEMO_PROMPT,
-      `以下の会話から合意メモを作成してください:\n\n${conversation}`
+      `以下の会話から合意メモを作成してください:\n\n${conversation}`,
+      { purpose: "summary" }
     );
   }
 
   if (mode === "action_items") {
     return chatCompletion(
       SUMMARY_PROMPT,
-      `以下の会話からアクションアイテムを抽出してください。箇条書きで、担当者が明確なものは担当者も記載してください:\n\n${conversation}`
+      `以下の会話からアクションアイテムを抽出してください。箇条書きで、担当者が明確なものは担当者も記載してください:\n\n${conversation}`,
+      { purpose: "summary" }
     );
   }
 
   return chatCompletion(
     SUMMARY_PROMPT,
-    `以下の会話を要約してください:\n\n${conversation}`
+    `以下の会話を要約してください:\n\n${conversation}`,
+    { purpose: "summary" }
   );
 }

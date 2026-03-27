@@ -58,14 +58,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: "ok" });
   }
 
-  // Handle follow events
+  // Handle follow/unfollow events
   for (const rawEvent of body.events as RawLineEvent[]) {
-    if (rawEvent.type === "follow") {
-      try {
+    try {
+      if (rawEvent.type === "follow") {
         await handleFollow(rawEvent);
-      } catch (err) {
-        console.error("Error handling follow:", err);
+      } else if (rawEvent.type === "unfollow" && rawEvent.source?.userId) {
+        await prisma.lineUser.updateMany({
+          where: { lineUserId: rawEvent.source.userId },
+          data: { unfollowedAt: new Date() },
+        });
       }
+    } catch (err) {
+      console.error("Error handling event:", err);
     }
   }
 

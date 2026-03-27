@@ -18,5 +18,5 @@ ${recentMessages.map((m, i) => `${i + 1}. ${m}`).join("\n")}
 中立のファシリテーターとして、温度を下げ、論点を整理し、次の一歩を提案するメッセージを生成してください。
 200文字以内で、自然な日本語で出力してください。`;
 
-  return chatCompletion(systemPrompt, userPrompt);
+  return chatCompletion(systemPrompt, userPrompt, { purpose: "mediation" });
 }

@@ -36,5 +36,5 @@ ${text}
 
 言い換え後のメッセージのみを出力してください。説明は不要です。`;
 
-  return chatCompletion(REWRITE_PROMPT, userPrompt);
+  return chatCompletion(REWRITE_PROMPT, userPrompt, { purpose: "rewrite" });
 }

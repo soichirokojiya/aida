@@ -39,7 +39,7 @@ export async function checkSafety(text: string): Promise<SafetyResult> {
   if (ruleResult) return ruleResult;
 
   try {
-    return await chatCompletionJson<SafetyResult>(SAFETY_CHECK_PROMPT, text);
+    return await chatCompletionJson<SafetyResult>(SAFETY_CHECK_PROMPT, text, { purpose: "safety" });
   } catch {
     return { isSafe: true, category: "none", severity: "none" };
   }

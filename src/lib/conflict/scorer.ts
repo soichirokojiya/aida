@@ -94,7 +94,8 @@ export async function scoreConflict(
 
     const llmResult = await chatCompletionJson<ConflictResult>(
       CONFLICT_SCORING_PROMPT,
-      context
+      context,
+      { purpose: "conflict" }
     );
 
     // Blend rule-based and LLM scores

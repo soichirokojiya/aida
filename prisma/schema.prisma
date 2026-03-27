@@ -67,6 +67,22 @@ model SystemConfig {
   value String
 }
 
+model LlmUsage {
+  id              String   @id @default(cuid())
+  conversationId  String?
+  messageId       String?
+  purpose         String   // intent, conflict, mediation, rewrite, summary, chat, safety
+  model           String
+  inputTokens     Int
+  outputTokens    Int
+  totalTokens     Int
+  responseTimeMs  Int
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([purpose])
+}
+
 model LineUser {
   id                String    @id @default(cuid())
   lineUserId        String    @unique
@@ -78,6 +94,8 @@ model LineUser {
   stripeSessionUrl  String?
   lastReminderType  String?   // pre_reminder, due_reminder, expired_reminder
   lastReminderAt    DateTime?
+  unfollowedAt      DateTime?
+  lastActiveAt      DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
