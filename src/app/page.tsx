@@ -424,7 +424,7 @@ export default function LandingPage() {
               },
               {
                 q: "解約はかんたんにできますか？",
-                a: "はい。いつでも解約できます。手続きに応じて解約できるほか、LINEをブロックして利用を止めることもできます。",
+                a: "はい。いつでも解約できます。うめこに「解約したい」と話しかけるか、LINEをブロックするだけでOKです。解約後も、無料期間中と同じようにグループでの見守りは続きます。1対1の返答機能のみ停止されます。",
               },
               {
                 q: "LINE以外でも使えますか？",
@@ -485,7 +485,6 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-6 text-xs text-gray-500">
             <a href="https://cfac.co.jp" target="_blank" rel="noopener noreferrer" className="hover:text-gray-700 transition">運営会社</a>
-            <Link href="/admin" className="hover:text-gray-700 transition">管理画面</Link>
             <span>&copy; 2026 うめこ</span>
           </div>
         </div>
