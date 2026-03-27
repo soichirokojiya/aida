@@ -308,6 +308,14 @@ async function handleDirectMessage(
   conversation: { id: string; contextType: string }
 ): Promise<void> {
   try {
+  // 0. If message is just bot name or empty after stripping, respond naturally
+  const strippedText = stripBotName(event.text).trim();
+  if (strippedText === "" || strippedText.length < 2) {
+    await saveMessage(conversation.id, event, "normal", 0);
+    await sendResponse(adapter, event, "呼んだ？ なにか気になることがあったら気軽に話しかけてね。");
+    return;
+  }
+
   // 1. Safety check (rule-based only for speed, LLM is overkill for DM)
   const safetyRuleResult = checkSafetyRuleBased(event.text);
   if (safetyRuleResult && !safetyRuleResult.isSafe) {
