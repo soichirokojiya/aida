@@ -14,6 +14,13 @@ import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages
 import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
 
 const BOT_NAME = "うめこ";
+
+function getJapanTimeContext(): string {
+  const now = new Date(Date.now() + 9 * 60 * 60 * 1000); // UTC+9
+  const hour = now.getUTCHours();
+  const greeting = hour < 5 ? "深夜" : hour < 10 ? "朝" : hour < 12 ? "午前中" : hour < 17 ? "午後" : hour < 21 ? "夜" : "夜遅く";
+  return `（現在の日本時間: ${hour}時頃、${greeting}）`;
+}
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
 
 const CHAT_SYSTEM_PROMPT = `あなたは「うめこ（梅子）」。LINEグループにいる、ちょっと気が利く人。
@@ -361,7 +368,7 @@ async function handleDirectMessage(
         : "";
 
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT,
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
         `${context}\n\nユーザー: ${event.text}`
       );
       break;
@@ -409,7 +416,7 @@ async function handleGroupMessage(
   const memberContext = memberNames.length > 0
     ? `（メンバー情報: ${memberNames.join("、")}。聞かれたら名前を教えてOK。自分からは出さない）`
     : "";
-  const groupContext = (memberCount
+  const groupContext = getJapanTimeContext() + (memberCount
     ? `（このグループは${memberCount}人）`
     : "") + memberContext;
 
