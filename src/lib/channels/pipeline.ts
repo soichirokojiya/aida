@@ -243,6 +243,18 @@ async function sendResponse(
 ) {
   // Clean up LLM output
   let cleaned = text.replace(/^うめこ[:：]\s*/i, "");
+
+  // Remove trailing questions from longer responses (gpt-4o-mini tends to add them)
+  // Keep if the whole message is a question (short, single sentence)
+  const sentences = cleaned.split(/(?<=[。？！\n])/);
+  if (sentences.length >= 2) {
+    // Check if last sentence is a question
+    const last = sentences[sentences.length - 1].trim();
+    if (last.endsWith("？") || last.endsWith("?")) {
+      // Remove the trailing question
+      cleaned = sentences.slice(0, -1).join("").trim();
+    }
+  }
   if (event.replyToken) {
     await adapter.sendReply(event.replyToken, cleaned);
   } else {
