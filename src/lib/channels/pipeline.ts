@@ -12,6 +12,7 @@ import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } fr
 import { isDmActive, isGroupActive } from "../billing/check";
 import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages";
 import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
+import { getConversationMemory, maybeUpdateSummary } from "../memory/summary";
 
 const BOT_NAME = "うめこ";
 
@@ -361,19 +362,29 @@ async function handleDirectMessage(
     }
 
     default: {
-      // Normal conversation
-      const { formatted: recentMsgs } = await getRecentMessages(conversation.id, 5);
-      const context = recentMsgs.length > 1
+      // Normal conversation with memory
+      const [{ formatted: recentMsgs }, memory] = await Promise.all([
+        getRecentMessages(conversation.id, 10),
+        getConversationMemory(conversation.id),
+      ]);
+
+      const memoryContext = memory
+        ? `\n\nこれまでの会話の要約:\n${memory}`
+        : "";
+      const recentContext = recentMsgs.length > 1
         ? `\n\n直近の会話:\n${recentMsgs.slice(0, -1).join("\n")}`
         : "";
 
       responseText = await chatCompletion(
         CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
-        `${context}\n\nユーザー: ${event.text}`
+        `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`
       );
       break;
     }
   }
+
+  // Update summary in background (non-blocking)
+  maybeUpdateSummary(conversation.id).catch(() => {});
 
   // Send response first, save to DB after (non-blocking)
   await sendResponse(adapter, event, responseText);
@@ -501,15 +512,16 @@ intervention: うめこが中立的に介入すべき空気か？
       }
 
       default: {
+        const memory = await getConversationMemory(conversation.id);
+        const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
+
         if (isDirectedAtBot) {
-          // Continuing conversation with bot - include recent context
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
             CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-            `直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`
+            `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`
           );
         } else {
-          // Direct mention - respond to the specific message
           responseText = await chatCompletion(
             CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
             textForProcessing
@@ -555,6 +567,9 @@ intervention: うめこが中立的に介入すべき空気か？
     }
     Promise.all(saves).catch(() => {});
   }
+
+  // Update summary in background
+  maybeUpdateSummary(conversation.id).catch(() => {});
 }
 
 export async function processMessage(

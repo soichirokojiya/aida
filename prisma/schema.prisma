@@ -19,6 +19,7 @@ model Conversation {
 
   messages      Message[]
   interventions Intervention[]
+  summaries     ConversationSummary[]
 
   @@unique([channelType, externalThreadId])
   @@index([updatedAt])
@@ -129,6 +130,20 @@ model GroupSubscription {
   @@index([groupId])
   @@index([payerLineUserId])
   @@index([status])
+}
+
+model ConversationSummary {
+  id                String   @id @default(cuid())
+  conversationId    String
+  summary           String
+  messagesCount     Int      // how many messages this summary covers
+  messageRangeEnd   DateTime // timestamp of last message included
+  version           Int      @default(1)
+  createdAt         DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId, version])
 }
 
 model GroupMembership {
