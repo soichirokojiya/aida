@@ -76,10 +76,13 @@ export async function POST(request: NextRequest) {
   // Handle message events
   const events = lineAdapter.normalizeEvents(body);
   for (const event of events) {
+    const start = Date.now();
     try {
+      console.log(`Processing: ${event.isDirectMessage ? "DM" : "Group"} from ${event.senderId.slice(0, 8)}`);
       await processMessage(event, lineAdapter);
+      console.log(`Done: ${Date.now() - start}ms`);
     } catch (err) {
-      console.error("Error processing message:", err instanceof Error ? err.stack : err);
+      console.error(`Error after ${Date.now() - start}ms:`, err instanceof Error ? err.stack : err);
     }
   }
 

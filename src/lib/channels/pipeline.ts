@@ -398,10 +398,12 @@ async function handleDirectMessage(
   Promise.all(saves).catch(() => {});
 
   } catch (err) {
-    console.error("DM handler error:", err instanceof Error ? err.message : err);
+    console.error("DM handler error:", err instanceof Error ? err.stack : err);
     try {
-      await sendResponse(adapter, event, "ごめんね、ちょっとうまく返事できなかった。もう一回送ってみてもらえる？");
-    } catch {}
+      await sendResponse(adapter, event, "ごめんね、今ちょっと調子が悪いみたい。少し時間を置いてからまた話しかけてもらえるとうれしいです。");
+    } catch (sendErr) {
+      console.error("Failed to send error response:", sendErr);
+    }
   }
 }
 
