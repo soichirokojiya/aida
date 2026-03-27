@@ -33,7 +33,12 @@ async function handleFollow(event: RawLineEvent) {
 
   await prisma.lineUser.upsert({
     where: { lineUserId: userId },
-    update: {}, // Don't reset if they re-follow
+    update: {
+      unfollowedAt: null,
+      // Re-follow: reset trial if expired, keep active if already paid
+      ...(await prisma.lineUser.findUnique({ where: { lineUserId: userId } })
+        .then(u => u?.billingStatus === "active" ? {} : { billingStatus: "trial", trialEndsAt })),
+    },
     create: {
       lineUserId: userId,
       trialEndsAt,

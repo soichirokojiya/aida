@@ -2,7 +2,7 @@ import { prisma } from "../db/prisma";
 import { NormalizedMessageEvent, ChannelAdapter } from "./types";
 import { detectIntent, Intent } from "../intent/detector";
 import { scoreConflict } from "../conflict/scorer";
-import { checkSafety, getSafetyResponse } from "../safety/checker";
+import { checkSafety, checkSafetyRuleBased, getSafetyResponse } from "../safety/checker";
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
@@ -234,22 +234,22 @@ async function handleDirectMessage(
   adapter: ChannelAdapter,
   conversation: { id: string; contextType: string }
 ): Promise<void> {
-  // In DM, always respond
-
-  // 1. Safety check
-  const safetyResult = await checkSafety(event.text);
-  if (!safetyResult.isSafe) {
+  // 1. Safety check (rule-based only for speed, LLM is overkill for DM)
+  const safetyRuleResult = checkSafetyRuleBased(event.text);
+  if (safetyRuleResult && !safetyRuleResult.isSafe) {
     const safetyResponse = getSafetyResponse();
     const savedMsg = await saveMessage(conversation.id, event, "normal", 100);
-    await saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyResult.category}`, safetyResponse);
-    await sendResponse(adapter, event, safetyResponse);
+    await Promise.all([
+      saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyRuleResult.category}`, safetyResponse),
+      sendResponse(adapter, event, safetyResponse),
+    ]);
     return;
   }
 
-  // 2. Detect intent
+  // 2. Detect intent (rule-based first, skip LLM if confident)
   const intentResult = await detectIntent(event.text);
 
-  // 3. Save message
+  // 3. Save message (don't await - do after response)
   const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, 0);
 
   let responseText: string;
@@ -315,12 +315,15 @@ async function handleDirectMessage(
     }
   }
 
-  if (triggerType) {
-    await saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, responseText);
-  }
-
+  // Send response first, save to DB after (non-blocking)
   await sendResponse(adapter, event, responseText);
-  await saveBotMessage(conversation.id, responseText);
+
+  // Save in background
+  const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, responseText)];
+  if (triggerType) {
+    saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, responseText));
+  }
+  Promise.all(saves).catch(() => {});
 }
 
 async function handleGroupMessage(
@@ -331,28 +334,28 @@ async function handleGroupMessage(
   const mentioned = isBotMentioned(event.text);
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
-  // 0. Get group member count for context
-  const memberCount = await getGroupMemberCount(event.externalThreadId);
-  const groupContext = memberCount
-    ? `（このグループは${memberCount}人。うめこを除くと${memberCount - 1}人の会話）`
-    : "";
-
-  // 1. Safety check
-  const safetyResult = await checkSafety(event.text);
-  if (!safetyResult.isSafe) {
+  // 1. Rule-based safety check (fast, no LLM)
+  const safetyRuleResult = checkSafetyRuleBased(event.text);
+  if (safetyRuleResult && !safetyRuleResult.isSafe) {
     const safetyResponse = getSafetyResponse();
     const savedMsg = await saveMessage(conversation.id, event, "normal", 100);
-    await saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyResult.category}`, safetyResponse);
-    await sendResponse(adapter, event, safetyResponse);
+    await Promise.all([
+      saveIntervention(conversation.id, savedMsg.id, "safety_escalation", 100, `Safety: ${safetyRuleResult.category}`, safetyResponse),
+      sendResponse(adapter, event, safetyResponse),
+    ]);
     return;
   }
 
-  // 2. Detect intent
-  const intentResult = await detectIntent(textForProcessing);
-
-  // 3. Score conflict
-  const recentMessages = await getRecentMessages(conversation.id);
+  // 2. Parallel: intent + conflict + member count + recent messages
+  const [intentResult, recentMessages, memberCount] = await Promise.all([
+    detectIntent(textForProcessing),
+    getRecentMessages(conversation.id),
+    getGroupMemberCount(event.externalThreadId),
+  ]);
   const conflictResult = await scoreConflict(event.text, recentMessages);
+  const groupContext = memberCount
+    ? `（このグループは${memberCount}人。うめこを除くと${memberCount - 1}人の会話）`
+    : "";
 
   // 4. Save message
   const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, conflictResult.score);
@@ -418,13 +421,16 @@ async function handleGroupMessage(
     }
   }
 
-  // 6. Send response
+  // 6. Send response first, save after
   if (responseText) {
-    if (triggerType) {
-      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictResult.score, conflictResult.reason, responseText);
-    }
     await sendResponse(adapter, event, responseText);
-    await saveBotMessage(conversation.id, responseText);
+
+    // Save in background
+    const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, responseText)];
+    if (triggerType) {
+      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, conflictResult.score, conflictResult.reason, responseText));
+    }
+    Promise.all(saves).catch(() => {});
   }
 }
 
@@ -432,8 +438,10 @@ export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
-  // Resolve display name from LINE API
-  const displayName = await resolveDisplayName(event);
+  // Parallel: resolve display name + billing check + conversation
+  const [displayName] = await Promise.all([
+    resolveDisplayName(event),
+  ]);
   if (displayName) {
     event.senderDisplayName = displayName;
   }
