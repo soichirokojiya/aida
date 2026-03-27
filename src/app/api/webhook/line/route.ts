@@ -40,6 +40,36 @@ async function handleFollow(event: RawLineEvent) {
     },
   });
 
+  // Save welcome message context to DB so うめこ remembers it
+  const welcomeText = `はじめまして、うめこです。ことばに迷ったとき、ちょっとだけお手伝いします。グループに招待してもらえれば、ふだんは静かにしてるけど、会話がちょっとピリッとしてきたら声をかけるね。話しかけたいときは「うめこ」って名前を入れてくれれば、いつでも気づきます。1対1でも気軽に話しかけてね。最初の1ヶ月は無料で使えます。`;
+
+  const conversation = await prisma.conversation.upsert({
+    where: {
+      channelType_externalThreadId: {
+        channelType: "line",
+        externalThreadId: userId,
+      },
+    },
+    update: {},
+    create: {
+      channelType: "line",
+      externalThreadId: userId,
+    },
+  });
+
+  await prisma.message.create({
+    data: {
+      conversationId: conversation.id,
+      senderId: "umeko-bot",
+      senderRole: "bot",
+      senderDisplayName: "うめこ",
+      text: welcomeText,
+      timestamp: new Date(),
+      detectedIntent: "normal",
+      conflictScore: 0,
+    },
+  });
+
   // Welcome message is handled by LINE Official Account's greeting message
 }
 
