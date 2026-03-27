@@ -434,11 +434,21 @@ async function handleGroupMessage(
       }
     }
   } else {
-    // Not mentioned - only auto-mediate if conflict score is high
+    // Not mentioned - only auto-mediate if conflict score is high AND cooldown has passed
     if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
-      const msgs = await getRecentMessages(conversation.id);
-      responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext);
-      triggerType = "auto_mediation";
+      // Check cooldown: don't auto-intervene within 5 minutes of last intervention
+      const lastIntervention = await prisma.intervention.findFirst({
+        where: { conversationId: conversation.id, triggerType: "auto_mediation" },
+        orderBy: { createdAt: "desc" },
+      });
+      const cooldownMs = 5 * 60 * 1000;
+      const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
+
+      if (cooledDown) {
+        const msgs = await getRecentMessages(conversation.id);
+        responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext);
+        triggerType = "auto_mediation";
+      }
     }
   }
 
