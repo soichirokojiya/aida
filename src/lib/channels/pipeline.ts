@@ -334,6 +334,22 @@ async function handleGroupMessage(
   conversation: { id: string; contextType: string }
 ): Promise<void> {
   const mentioned = isBotMentioned(event.text);
+
+  // Check if this is a continuation of a conversation with うめこ
+  // (someone replied within 60 seconds of うめこ's last message)
+  let isConversationContinuation = false;
+  if (!mentioned) {
+    const lastBotMsg = await prisma.message.findFirst({
+      where: { conversationId: conversation.id, senderRole: "bot" },
+      orderBy: { timestamp: "desc" },
+    });
+    if (lastBotMsg) {
+      const diffMs = event.timestamp.getTime() - lastBotMsg.timestamp.getTime();
+      isConversationContinuation = diffMs >= 0 && diffMs < 60_000;
+    }
+  }
+
+  const shouldRespond = mentioned || isConversationContinuation;
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
   // 1. Rule-based safety check (fast, no LLM)
@@ -366,8 +382,8 @@ async function handleGroupMessage(
   let responseText: string | null = null;
   let triggerType: string | null = null;
 
-  // If bot is mentioned, always respond
-  if (mentioned) {
+  // Respond if mentioned or conversation continuation
+  if (shouldRespond) {
     switch (intentResult.intent) {
       case "rewrite_request": {
         const cleanText = textForProcessing
