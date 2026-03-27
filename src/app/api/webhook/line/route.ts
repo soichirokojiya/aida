@@ -13,15 +13,14 @@ interface RawLineEvent {
 
 function validateSignature(body: string, signature: string): boolean {
   const secret = process.env.LINE_CHANNEL_SECRET || "";
-  if (!secret) {
-    console.error("LINE_CHANNEL_SECRET is not set");
-    return false;
-  }
+  if (!secret) return false;
   const hash = crypto
     .createHmac("SHA256", secret)
     .update(body)
-    .digest("base64");
-  return hash === signature;
+    .digest();
+  const sigBuf = Buffer.from(signature, "base64");
+  if (hash.length !== sigBuf.length) return false;
+  return crypto.timingSafeEqual(hash, sigBuf);
 }
 
 async function handleFollow(event: RawLineEvent) {

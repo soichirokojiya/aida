@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
         where: { lineUserId: result.lineUserId },
         data: { billingStatus: "active" },
       });
-      console.log(`User ${result.lineUserId} activated`);
+      console.log("Billing: user activated");
     }
 
     if (result.type === "subscription_cancelled" && result.lineUserId) {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         where: { lineUserId: result.lineUserId },
         data: { billingStatus: "cancelled" },
       });
-      console.log(`User ${result.lineUserId} cancelled`);
+      console.log("Billing: user cancelled");
     }
 
     return NextResponse.json({ received: true });
