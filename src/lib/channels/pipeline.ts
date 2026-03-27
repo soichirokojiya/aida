@@ -374,7 +374,7 @@ async function handleGroupMessage(
   const { formatted: recentMessages, memberNames } = recentData;
   const conflictResult = await scoreConflict(event.text, recentMessages);
   const memberContext = memberNames.length > 0
-    ? `（メンバー情報: ${memberNames.join("、")}。ただし応答に名前を使わないこと）`
+    ? `（メンバー情報: ${memberNames.join("、")}。聞かれたら名前を教えてOK。自分からは出さない）`
     : "";
   const groupContext = (memberCount
     ? `（このグループは${memberCount}人）`
