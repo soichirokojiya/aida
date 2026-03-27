@@ -54,12 +54,14 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-gray-500 text-base md:text-lg leading-relaxed mb-3">
-                すれ違いを、少しずつ軽く。
+                すれ違いや気まずさを、少しずつ軽く。
               </p>
               <p className="text-gray-500 text-base leading-relaxed mb-8">
-                グループに入れたら会話を見守って整理。
+                うめこは、ことばに迷ったときのLINEサービスです。
                 <br />
-                1対1で話しかければ、相談相手にもなります。
+                グループに入れておけば、空気が悪くなりそうなときだけ、そっと会話を整理。
+                <br />
+                1対1で話しかければ、伝え方の相談や言い換え、モヤモヤの整理もできます。
               </p>
 
               <LineButton>LINEで友だち追加する</LineButton>
@@ -76,116 +78,116 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 2つの使い方 ── */}
-      <section className="py-20 px-6">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-center text-teal-600 text-sm font-medium mb-3">2つの使い方</p>
-          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
-            グループでも、1対1でも
-          </h2>
-          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
-            うめこはグループトークに参加して会話を見守ることも、
-            <br />
-            1対1で直接相談することもできます。
-          </p>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
-                  <span className="text-lg">👥</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800 text-sm">グループに招待する</p>
-                  <p className="text-sm text-gray-500">会話を見守り、必要なときだけ介入</p>
-                </div>
-              </div>
-              <ul className="space-y-2 text-base text-gray-600">
-                <li className="flex gap-2"><span className="text-teal-400">・</span>普段は静かに見守っている</li>
-                <li className="flex gap-2"><span className="text-teal-400">・</span>空気が悪くなりそうなとき、さりげなく整理</li>
-                <li className="flex gap-2"><span className="text-teal-400">・</span>「うめこ、まとめて」と呼べばいつでも対応</li>
-                <li className="flex gap-2"><span className="text-teal-400">・</span>どちらの味方もしない</li>
-              </ul>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 border border-gray-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center border border-sky-100">
-                  <span className="text-lg">💬</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800 text-sm">1対1で相談する</p>
-                  <p className="text-sm text-gray-500">伝え方の相談、言い換え、愚痴を聞く</p>
-                </div>
-              </div>
-              <ul className="space-y-2 text-base text-gray-600">
-                <li className="flex gap-2"><span className="text-sky-400">・</span>「こう言いたいけど、どう伝えたらいい？」</li>
-                <li className="flex gap-2"><span className="text-sky-400">・</span>送る前のメッセージをやわらかくチェック</li>
-                <li className="flex gap-2"><span className="text-sky-400">・</span>モヤモヤを整理するだけでもOK</li>
-                <li className="flex gap-2"><span className="text-sky-400">・</span>いつでも気軽に話しかけられる</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── 共感 ── */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
           <p className="text-center text-teal-600 text-sm font-medium mb-3">ことばに迷う瞬間</p>
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-12">
             こんなこと、ありませんか？
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="space-y-4 max-w-xl mx-auto">
             {[
-              "言いたいことはあるけど、きつく聞こえそうで言えない",
-              "同じことで何度もすれ違って、もう話すのが面倒",
-              "言わなかったことが積もって、ある日ドカンとなる",
-              "部下へのフィードバック、パワハラと思われたくない",
-              "取引先への催促、角が立たない言い方がわからない",
-              "誰かに相談したいけど、わざわざ人を巻き込むほどでもない",
+              "言いたいことはあるけど、きつく聞こえそうで言えない。",
+              "同じことで何度もすれ違って、話すのがしんどくなる。",
+              "言わなかったことが積もって、ある日まとめてあふれてしまう。",
+              "部下へのフィードバックで、強く言いすぎたくない。",
+              "取引先への催促やお断りを、角が立たないように伝えたい。",
+              "誰かに少し相談したいけれど、わざわざ人を巻き込むほどでもない。",
             ].map((text, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-xl p-4 bg-gray-50 border border-gray-100">
-                <span className="text-teal-400 mt-0.5 text-sm">&#9679;</span>
-                <p className="text-base text-gray-600 leading-relaxed">{text}</p>
-              </div>
+              <p key={i} className="text-gray-600 text-base leading-relaxed">{text}</p>
             ))}
+          </div>
+
+          <p className="text-center text-gray-500 text-base mt-10">
+            そんな&ldquo;ことばに迷う瞬間&rdquo;に、うめこがいます。
+          </p>
+        </div>
+      </section>
+
+      {/* ── 2つの使い方 ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-center text-teal-600 text-sm font-medium mb-3">2つの使い方</p>
+          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-12">
+            グループでも、1対1でも
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
+                  <span className="text-lg">👥</span>
+                </div>
+                <p className="font-medium text-gray-800">グループに招待する</p>
+              </div>
+              <p className="text-gray-500 text-base leading-relaxed mb-4">
+                普段は静かに見守って、必要なときだけ入ります。
+                空気が悪くなりそうなとき、話がこんがらがってきたとき、
+                うめこがそっと論点を整理します。
+              </p>
+              <ul className="space-y-2 text-base text-gray-600">
+                <li className="flex gap-2"><span className="text-teal-400">・</span>ふだんは静かに見守る</li>
+                <li className="flex gap-2"><span className="text-teal-400">・</span>空気が変わったときだけ、さりげなく声をかける</li>
+                <li className="flex gap-2"><span className="text-teal-400">・</span>「うめこ、まとめて」でいつでも整理できる</li>
+                <li className="flex gap-2"><span className="text-teal-400">・</span>どちらの味方もしない</li>
+              </ul>
+            </div>
+
+            <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-full bg-sky-50 flex items-center justify-center border border-sky-100">
+                  <span className="text-lg">💬</span>
+                </div>
+                <p className="font-medium text-gray-800">1対1で相談する</p>
+              </div>
+              <p className="text-gray-500 text-base leading-relaxed mb-4">
+                送る前のメッセージを見てもらったり、
+                モヤモヤをことばにしたり、ちょっと愚痴をこぼしたり。
+                うまく言えないときに、気軽に話しかけられます。
+              </p>
+              <ul className="space-y-2 text-base text-gray-600">
+                <li className="flex gap-2"><span className="text-sky-400">・</span>「こう言いたいけど、どう伝える？」</li>
+                <li className="flex gap-2"><span className="text-sky-400">・</span>「このメッセージ、やわらかくして」</li>
+                <li className="flex gap-2"><span className="text-sky-400">・</span>「ちょっと整理したい」</li>
+                <li className="flex gap-2"><span className="text-sky-400">・</span>「断り方を一緒に考えて」</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── グループで使う：家庭版 ── */}
+      {/* ── グループで使う ── */}
       <section className="py-20 px-6 bg-gradient-to-b from-white to-[#F6FAF8]">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-teal-600 text-sm font-medium mb-3">グループで使う</p>
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             会話が荒れそうなとき、そっと整理
           </h2>
-          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
-            うめこをグループに招待しておくだけ。
-            <br />
-            普段は静かに見守り、空気が変わったときだけ声をかけます。
+          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
+            うめこは、どちらが正しいかを決めるための存在ではありません。
+            言い分がぶつかっているときに、何がすれ違っているのかを見つけて、
+            次にどう話せばいいかを少しだけ整えます。
           </p>
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <LineMock title="家族グループ" messages={FAMILY_CHAT} memberCount={3} />
             <div className="space-y-6">
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <p className="text-sm font-medium text-gray-800 mb-3">うめこがやっていること</p>
+                <p className="font-medium text-gray-800 mb-3">うめこがやっていること</p>
                 <ul className="space-y-2 text-base text-gray-600">
                   <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>どちらが悪いかは言わない</li>
-                  <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>すれ違いのポイントを言語化</li>
-                  <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>次にやることを1つだけ提案</li>
+                  <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>すれ違いのポイントをことばにする</li>
+                  <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>次にやることを1つだけ提案する</li>
                 </ul>
               </div>
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <p className="text-sm font-medium text-gray-800 mb-3">こんなグループで</p>
-                <ul className="space-y-1.5 text-sm text-gray-500">
-                  <li>・夫婦・カップル・家族</li>
+                <p className="font-medium text-gray-800 mb-3">こんなグループで使えます</p>
+                <ul className="space-y-1.5 text-base text-gray-500">
+                  <li>・夫婦、カップル、家族</li>
                   <li>・プロジェクトチーム</li>
                   <li>・取引先との連絡グループ</li>
-                  <li>・シェアハウスの共有グループ</li>
+                  <li>・シェアハウスや共同生活の連絡グループ</li>
                 </ul>
               </div>
             </div>
@@ -200,16 +202,16 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             伝え方に迷ったら、まずうめこに相談
           </h2>
-          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
-            送る前のメッセージを見てもらったり、
-            <br />
-            モヤモヤを整理するだけの使い方もOK。
+          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
+            うめこは、ただ返事を作るだけではありません。
+            言いづらいことを少しやわらかくしたり、長くなった話を短く整理したり、
+            気持ちがこんがらがっているときに、何に引っかかっているのかを一緒に見つけたりできます。
           </p>
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div className="space-y-6 order-2 md:order-1">
+            <div className="order-2 md:order-1 space-y-6">
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <p className="text-sm font-medium text-gray-800 mb-3">こんなふうに使える</p>
+                <p className="font-medium text-gray-800 mb-3">こんなふうに使える</p>
                 <ul className="space-y-2 text-base text-gray-600">
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「こう言いたいけど、どう伝える？」</li>
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「このメッセージ、柔らかくして」</li>
@@ -217,16 +219,10 @@ export default function LandingPage() {
                   <li className="flex gap-2"><span className="text-sky-500">&#10003;</span>「断りの文面を一緒に考えて」</li>
                 </ul>
               </div>
-              <div className="bg-white rounded-2xl p-6 border border-gray-100">
-                <p className="text-sm font-medium text-gray-800 mb-3">グループとの違い</p>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  グループではみんなの前で整理役。
-                  <br />
-                  1対1では、あなただけの相談相手。
-                  <br />
-                  使い分けはお好みで。
-                </p>
-              </div>
+              <p className="text-gray-500 text-base leading-relaxed px-2">
+                これまでの相談ややりとりを少しずつふまえながら、
+                毎回ゼロから説明しなくても、続けて話しやすい存在を目指しています。
+              </p>
             </div>
             <div className="order-1 md:order-2">
               <LineMock title="うめこ" messages={DM_CONSULT_CHAT} />
@@ -242,9 +238,8 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             チーム内のすれ違いも、さらっと整理
           </h2>
-          <p className="text-center text-gray-500 text-base mb-12 max-w-md mx-auto">
+          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
             社内のグループに入れておけば、
-            <br />
             認識のズレや感情的なやりとりをやわらかく整理します。
           </p>
 
@@ -263,12 +258,12 @@ export default function LandingPage() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             {[
-              { icon: "👥", title: "グループの会話を見守る", desc: "荒れそうなときだけ、さりげなく介入" },
-              { icon: "💬", title: "1対1で相談にのる", desc: "伝え方の相談、愚痴、モヤモヤの整理" },
-              { icon: "✏️", title: "やわらかく言い換え", desc: "意味はそのまま、温度だけ下げます" },
-              { icon: "📝", title: "会話をまとめる", desc: "何が決まって何が残ってるかを整理" },
-              { icon: "🤝", title: "次の一歩を提案", desc: "具体的で小さなアクションを1つだけ" },
-              { icon: "🛡️", title: "どちらの味方もしない", desc: "善悪の判定はしません。整理だけ" },
+              { icon: "👥", title: "グループの会話を見守る", desc: "荒れそうなときだけ、さりげなく入ります。" },
+              { icon: "💬", title: "1対1で相談にのる", desc: "伝え方の相談、モヤモヤの整理、愚痴もOKです。" },
+              { icon: "✏️", title: "やわらかく言い換える", desc: "意味はそのままに、温度だけ少し下げます。" },
+              { icon: "📝", title: "会話をまとめる", desc: "何が決まって、何が残っているかを整理します。" },
+              { icon: "🤝", title: "次の一歩を提案する", desc: "大きな正解より、まず進みやすい一歩を大切にします。" },
+              { icon: "🛡️", title: "どちらの味方もしない", desc: "善悪を決めるのではなく、うまく話せる形を探します。" },
             ].map((item, i) => (
               <div key={i} className="flex gap-4 bg-white rounded-xl p-5 border border-gray-100">
                 <span className="text-xl flex-shrink-0">{item.icon}</span>
@@ -278,65 +273,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── 使い方 ── */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-12">
-            使い方
-          </h2>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-teal-50/50 rounded-2xl p-6 border border-teal-100/50">
-              <p className="font-medium text-gray-800 text-sm mb-4 flex items-center gap-2">
-                <span>👥</span> グループで使う場合
-              </p>
-              <ol className="space-y-3 text-base text-gray-600">
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                  うめこを友だち追加
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                  グループに招待する
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  あとは普通に会話するだけ。必要なときだけうめこが声をかけます
-                </li>
-              </ol>
-            </div>
-
-            <div className="bg-sky-50/50 rounded-2xl p-6 border border-sky-100/50">
-              <p className="font-medium text-gray-800 text-sm mb-4 flex items-center gap-2">
-                <span>💬</span> 1対1で使う場合
-              </p>
-              <ol className="space-y-3 text-base text-gray-600">
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                  うめこを友だち追加
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                  そのまま話しかける
-                </li>
-                <li className="flex gap-3">
-                  <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  相談、言い換え、愚痴。なんでもOK
-                </li>
-              </ol>
-            </div>
-          </div>
-
-          <div className="mt-8 bg-gray-50 rounded-xl p-5 border border-gray-100 flex items-center gap-4">
-            <span className="text-2xl flex-shrink-0">💼</span>
-            <div>
-              <p className="text-sm font-medium text-gray-800">Slack にも近日対応予定</p>
-              <p className="text-sm text-gray-500">社内のSlackワークスペースでも、うめこが使えるようになります。</p>
-            </div>
           </div>
         </div>
       </section>
@@ -352,48 +288,35 @@ export default function LandingPage() {
           <div className="space-y-6 text-gray-600 text-base leading-[1.9]">
             <p>
               どこの職場にも、どこの家庭にも、
-              ひとりくらい「この人がいると空気が変わる」って人がいると思う。
+              ひとりくらい「この人がいると空気がやわらぐ」人がいると思う。
             </p>
 
             <p>
-              会議で空気が固まったとき、いつの間にか隣にいて、
-              さらっと場の温度を変えてくれる人。
-              本人は「別に何もしてないよ」って言うけど、
-              周りから見ると、その人がいるだけでなぜか話しやすくなる。
+              会議が少し固くなったとき。
+              気まずい空気が流れたとき。
+              いつの間にかそこにいて、
+              さらっと場を落ち着かせてくれる人。
             </p>
 
             <p>
-              うめこは、そういう人をイメージして生まれました。
+              うめこは、そういう存在をイメージして生まれました。
             </p>
 
-            <p className="text-gray-400 text-sm py-2">───</p>
+            <p className="text-gray-300 text-sm py-2">───</p>
 
             <p>
-              人は言い方ひとつで傷つくし、言い方ひとつで救われる。
-              <br />
-              正しいことを正しく言っても、伝わらないことがある。
-            </p>
-
-            <p>
-              黙ることは優しさじゃない。でも、言い方は選べる。
-            </p>
-
-            <p className="text-gray-400 text-sm py-2">───</p>
-
-            <p>
-              紅茶が好きで、散歩が好きで、古い喫茶店の窓際の席が好き。
-              <br />
-              大声は苦手。正論で詰めてくる人も得意じゃない。
-              <br />
-              「で、結論は？」って急かされると、ちょっと黙る。
+              人は、言い方ひとつで傷つくし、
+              言い方ひとつで救われることもある。
+              正しいことでも、伝わり方によって届かないことがある。
             </p>
 
             <p>
-              100点の解決より、まず1歩だけ前に進めたらいいと思ってる。
+              だからうめこは、
+              どっちが悪いかを決めるより、
+              どうしたら少しうまくいくかを一緒に考えたいと思っています。
             </p>
           </div>
 
-          {/* うめこのことば */}
           <div className="mt-16 bg-teal-50/60 rounded-2xl p-8 border border-teal-100/60">
             <div className="flex items-start gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -410,10 +333,6 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-
-          <p className="text-center mt-14 text-teal-700 text-lg font-medium tracking-wide">
-            「どっちが悪いかより、どうしたらうまくいくか」
-          </p>
         </div>
       </section>
 
@@ -447,7 +366,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 安心感 ── */}
-      <section className="py-20 px-6 bg-[#FAFBFC]">
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-10">
             うめこの約束
@@ -457,25 +376,25 @@ export default function LandingPage() {
             {[
               "中立です",
               "説教しません",
-              "味方しません",
+              "どちらかの味方にはなりません",
               "感情を否定しません",
             ].map((text, i) => (
-              <div key={i} className="bg-white rounded-xl py-4 px-5 border border-gray-100">
-                <p className="text-sm text-gray-700">{text}</p>
+              <div key={i} className="bg-[#FAFBFC] rounded-xl py-4 px-5 border border-gray-100">
+                <p className="text-base text-gray-700">{text}</p>
               </div>
             ))}
           </div>
 
           <p className="text-gray-500 text-base leading-relaxed">
-            うめこは裁判官じゃなくて、ちょっと気が利く友達。
+            うめこは、裁くための存在ではありません。
             <br />
-            どっちが悪いかじゃなく、どうしたらうまくいくかを考えます。
+            ちょっとことばを整えて、少し話しやすくするための相手です。
           </p>
         </div>
       </section>
 
       {/* ── Q&A ── */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-20 px-6 bg-[#FAFBFC]">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-12">
             よくある質問
@@ -485,34 +404,34 @@ export default function LandingPage() {
             {[
               {
                 q: "会話の内容は安全ですか？",
-                a: "はい。会話データはユーザーの実名を保存せず、LINE上のIDのみで管理しています。万が一の情報漏洩時にも、誰の発言かが特定されない設計です。",
+                a: "会話データは、実名ではなくLINE上の識別情報をもとに管理しています。また、会話内容が外部に公開されたり、第三者に販売されたりすることはありません。安心して使っていただけるよう、取り扱いには十分配慮しています。",
               },
               {
                 q: "グループの会話が外部に共有されることはありますか？",
-                a: "ありません。会話データは第三者に共有・販売されることはありません。AIの応答生成のためにのみ使用されます。",
+                a: "ありません。グループ内の会話データは、うめこの応答や会話整理のためにのみ使用され、第三者に共有・販売されることはありません。",
               },
               {
                 q: "無料期間が終わったらどうなりますか？",
-                a: "1対1でのお返事ができなくなります。グループでの会話記録は引き続き行われます。月額プランに登録すればすぐに復帰できます。",
+                a: "無料期間終了後は、1対1での返答機能がご利用いただけなくなります。グループ内での見守りや会話記録はそのまま続きます。月額プランにご登録いただくと、1対1機能もすぐに再開できます。",
               },
               {
-                q: "グループに入れたら全部の会話に返信しますか？",
-                a: "いいえ。普段は静かに見守っているだけです。空気が悪くなりそうなときや、「うめこ」と呼びかけたときだけ反応します。",
+                q: "グループに入れたら、すべての会話に返信しますか？",
+                a: "いいえ。普段は静かに見守っていて、すべての会話に反応するわけではありません。空気が悪くなりそうなときや、「うめこ」と呼びかけられたときに反応します。",
               },
               {
                 q: "1対1では何ができますか？",
-                a: "伝え方の相談、メッセージの言い換え、愚痴を聞く、モヤモヤの整理など、なんでも話しかけてもらえます。",
+                a: "伝え方の相談、メッセージの言い換え、気持ちの整理、モヤモヤの言語化などに使えます。「どう返したらいいかわからない」ときも、気軽に話しかけてもらえます。",
               },
               {
                 q: "解約はかんたんにできますか？",
-                a: "はい。いつでも解約できます。LINEをブロックするだけでもOKです。",
+                a: "はい。いつでも解約できます。手続きに応じて解約できるほか、LINEをブロックして利用を止めることもできます。",
               },
               {
                 q: "LINE以外でも使えますか？",
-                a: "現在はLINEのみ対応しています。Slackにも近日対応予定です。",
+                a: "現在はLINEのみ対応しています。今後、他のチャットサービスへの対応も順次検討しています。",
               },
             ].map((item, i) => (
-              <div key={i} className="border-b border-gray-100 pb-6">
+              <div key={i} className="border-b border-gray-200 pb-6">
                 <p className="font-medium text-gray-800 mb-2">{item.q}</p>
                 <p className="text-gray-500 text-base leading-relaxed">{item.a}</p>
               </div>
@@ -537,9 +456,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="text-gray-500 text-base leading-relaxed mb-10">
-            グループに招待しても、1対1で話しかけても。
-            <br />
-            関係を壊さずに伝えるための、小さな相棒。
+            ひとりで抱えこまずに、まずは気軽に話しかけてみてください。
           </p>
 
           <LineButton>LINEで友だち追加する</LineButton>
@@ -554,7 +471,7 @@ export default function LandingPage() {
             alt="LINE QRコード"
             className="w-32 h-32 mx-auto mt-8 rounded-xl"
           />
-          <p className="mt-2 text-xs text-gray-300">QRコードからも追加できます</p>
+          <p className="mt-2 text-xs text-gray-400">QRコードからも追加できます</p>
         </div>
       </section>
 
