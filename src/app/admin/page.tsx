@@ -7,23 +7,28 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function toJST(date: Date): string {
+  return date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
 export default async function ConversationsPage() {
   const conversations = await prisma.conversation.findMany({
     orderBy: { updatedAt: "desc" },
     take: 50,
     include: {
       messages: { orderBy: { timestamp: "desc" }, take: 1 },
-      interventions: { orderBy: { createdAt: "desc" }, take: 1 },
       _count: { select: { messages: true, interventions: true } },
     },
   });
 
-  // Get member counts per group from GroupMembership
   const groupMemberCounts = await prisma.groupMembership.groupBy({
     by: ["groupId"],
     _count: true,
   });
   const memberCountMap = new Map(groupMemberCounts.map(g => [g.groupId, g._count]));
+
+  const groupSubs = await prisma.groupSubscription.findMany();
+  const groupSubMap = new Map(groupSubs.map(g => [g.groupId, g.status]));
 
   return (
     <div>
@@ -32,17 +37,21 @@ export default async function ConversationsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>スレッドID</TableHead>
-            <TableHead>チャネル</TableHead>
-            <TableHead>参加人数</TableHead>
+            <TableHead>種別</TableHead>
+            <TableHead>人数</TableHead>
+            <TableHead>契約</TableHead>
             <TableHead>最新メッセージ</TableHead>
-            <TableHead>メッセージ数</TableHead>
-            <TableHead>介入数</TableHead>
+            <TableHead>件数</TableHead>
+            <TableHead>介入</TableHead>
             <TableHead>更新日時</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {conversations.map((conv) => {
             const lastMsg = conv.messages[0];
+            const isGroup = !conv.externalThreadId.startsWith("U");
+            const memberCount = memberCountMap.get(conv.externalThreadId);
+            const groupStatus = groupSubMap.get(conv.externalThreadId);
             return (
               <TableRow key={conv.id}>
                 <TableCell>
@@ -54,27 +63,32 @@ export default async function ConversationsPage() {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{conv.channelType}</Badge>
+                  <Badge variant="outline">{isGroup ? "グループ" : "DM"}</Badge>
                 </TableCell>
                 <TableCell className="text-sm">
-                  {memberCountMap.get(conv.externalThreadId)
-                    ? `${(memberCountMap.get(conv.externalThreadId) || 0) + 1}人`
-                    : conv.channelType === "line" ? "DM" : "-"}
+                  {isGroup ? (memberCount ? `${memberCount + 1}人` : "-") : "-"}
                 </TableCell>
-                <TableCell className="max-w-xs truncate text-sm">
-                  {lastMsg?.text || "-"}
+                <TableCell>
+                  {isGroup ? (
+                    groupStatus === "active"
+                      ? <Badge className="bg-green-100 text-green-700 text-xs">有効</Badge>
+                      : <span className="text-xs text-gray-400">未契約</span>
+                  ) : "-"}
+                </TableCell>
+                <TableCell className="text-sm max-w-md">
+                  <p className="whitespace-pre-wrap break-words">{lastMsg?.text || "-"}</p>
                 </TableCell>
                 <TableCell className="text-sm">{conv._count.messages}</TableCell>
                 <TableCell className="text-sm">{conv._count.interventions}</TableCell>
-                <TableCell className="text-xs text-gray-500">
-                  {conv.updatedAt.toLocaleString("ja-JP")}
+                <TableCell className="text-xs text-gray-500 whitespace-nowrap">
+                  {toJST(conv.updatedAt)}
                 </TableCell>
               </TableRow>
             );
           })}
           {conversations.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={8} className="text-center text-gray-400 py-8">
                 まだ会話がありません
               </TableCell>
             </TableRow>

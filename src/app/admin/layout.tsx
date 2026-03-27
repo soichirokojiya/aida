@@ -26,6 +26,9 @@ export default function AdminLayout({
         <Link href="/admin/kpi" className="text-sm text-gray-600 hover:text-gray-900">
           KPI
         </Link>
+        <a href="/api/admin/export?type=messages" className="text-sm text-gray-600 hover:text-gray-900">
+          CSV出力
+        </a>
       </nav>
       <main className="p-6 max-w-6xl mx-auto">{children}</main>
     </div>

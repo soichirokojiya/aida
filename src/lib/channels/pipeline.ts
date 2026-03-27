@@ -295,6 +295,7 @@ async function handleDirectMessage(
   adapter: ChannelAdapter,
   conversation: { id: string; contextType: string }
 ): Promise<void> {
+  try {
   // 1. Safety check (rule-based only for speed, LLM is overkill for DM)
   const safetyRuleResult = checkSafetyRuleBased(event.text);
   if (safetyRuleResult && !safetyRuleResult.isSafe) {
@@ -395,6 +396,13 @@ async function handleDirectMessage(
     saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, responseText));
   }
   Promise.all(saves).catch(() => {});
+
+  } catch (err) {
+    console.error("DM handler error:", err instanceof Error ? err.message : err);
+    try {
+      await sendResponse(adapter, event, "ごめんね、ちょっとうまく返事できなかった。もう一回送ってみてもらえる？");
+    } catch {}
+  }
 }
 
 async function handleGroupMessage(

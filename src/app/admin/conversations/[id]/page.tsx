@@ -5,6 +5,10 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+function toJST(date: Date): string {
+  return date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
 export default async function ConversationDetailPage({
   params,
 }: {
@@ -17,6 +21,7 @@ export default async function ConversationDetailPage({
     include: {
       messages: { orderBy: { timestamp: "asc" } },
       interventions: { orderBy: { createdAt: "asc" } },
+      summaries: { orderBy: { version: "desc" }, take: 1 },
     },
   });
 
@@ -25,6 +30,8 @@ export default async function ConversationDetailPage({
   const interventionMessageIds = new Set(
     conversation.interventions.map((i) => i.triggerMessageId)
   );
+
+  const summary = conversation.summaries[0];
 
   return (
     <div>
@@ -36,9 +43,16 @@ export default async function ConversationDetailPage({
         </div>
       </div>
 
+      {summary && (
+        <div className="mb-6 bg-teal-50 rounded-lg p-4 border border-teal-100">
+          <p className="text-sm font-medium text-teal-700 mb-1">会話の要約（{summary.messagesCount}件分）</p>
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{summary.summary}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-2">
-          <h2 className="font-semibold mb-3">メッセージ</h2>
+          <h2 className="font-semibold mb-3">メッセージ（{conversation.messages.length}件）</h2>
           {conversation.messages.map((msg) => {
             const isBot = msg.senderRole === "bot";
             const hasIntervention = interventionMessageIds.has(msg.id);
@@ -58,7 +72,7 @@ export default async function ConversationDetailPage({
                     {isBot ? "うめこ" : msg.senderId}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {msg.timestamp.toLocaleString("ja-JP")}
+                    {toJST(msg.timestamp)}
                   </span>
                   {msg.detectedIntent && msg.detectedIntent !== "normal" && (
                     <Badge variant="outline" className="text-xs">
@@ -66,27 +80,25 @@ export default async function ConversationDetailPage({
                     </Badge>
                   )}
                 </div>
-                <p className="whitespace-pre-wrap">{msg.text}</p>
+                <p className="whitespace-pre-wrap break-words">{msg.text}</p>
               </div>
             );
           })}
         </div>
 
         <div>
-          <h2 className="font-semibold mb-3">介入履歴</h2>
+          <h2 className="font-semibold mb-3">介入履歴（{conversation.interventions.length}件）</h2>
           <div className="space-y-3">
             {conversation.interventions.map((inv) => (
               <Card key={inv.id}>
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Badge>{inv.triggerType}</Badge>
+                    <span className="text-xs text-gray-400">{toJST(inv.createdAt)}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-3">
-                  <p className="text-sm whitespace-pre-wrap">{inv.responseText}</p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    {inv.createdAt.toLocaleString("ja-JP")}
-                  </p>
+                  <p className="text-sm whitespace-pre-wrap break-words">{inv.responseText}</p>
                 </CardContent>
               </Card>
             ))}
