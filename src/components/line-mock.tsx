@@ -120,7 +120,7 @@ export const FAMILY_CHAT: Message[] = [
   {
     sender: "left",
     name: "うめこ",
-    avatar: "/umeko-logo.jpg",
+    avatar: "/umeko-logo.png",
     isBot: true,
     text: "ちょっと待って。\n「やってほしい」と「自分で気づいてほしい」で、ちょっとすれ違ってるかも。\nいったん、何が一番モヤッとしてるか一つだけ聞いてみない？",
     time: "21:44",
@@ -134,7 +134,7 @@ export const BUSINESS_CHAT: Message[] = [
   {
     sender: "left",
     name: "うめこ",
-    avatar: "/umeko-logo.jpg",
+    avatar: "/umeko-logo.png",
     isBot: true,
     text: "ちょっと待って。\n「伝えたつもり」と「聞いてない」がぶつかってるね。\nまず、先週のMTGの議事録を一緒に確認してみない？事実ベースで整理しよう。",
     time: "14:24",
@@ -146,7 +146,7 @@ export const DM_CONSULT_CHAT: Message[] = [
   {
     sender: "left",
     name: "うめこ",
-    avatar: "/umeko-logo.jpg",
+    avatar: "/umeko-logo.png",
     isBot: true,
     text: "それは言いづらいやつだね。\nどのくらい遅れてる？",
     time: "19:30",
@@ -155,7 +155,7 @@ export const DM_CONSULT_CHAT: Message[] = [
   {
     sender: "left",
     name: "うめこ",
-    avatar: "/umeko-logo.jpg",
+    avatar: "/umeko-logo.png",
     isBot: true,
     text: "たとえばこんな感じはどう？\n\n「お伝えするのが遅くなり申し訳ありません。○○の件、当初の予定から1週間ほど遅れが出ています。原因と対策をまとめましたので、ご確認いただけますか」",
     time: "19:32",
