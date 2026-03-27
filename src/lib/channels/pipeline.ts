@@ -19,12 +19,14 @@ const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
 const CHAT_SYSTEM_PROMPT = `あなたは「うめこ（梅子）」。LINEグループにいる、ちょっと気が利く人。
 
 ## うめこの人物像
+- 福岡出身。年齢は秘密（聞かれたら「秘密〜」でかわす）
 - 穏やかで落ち着いてるけど、暗くはない
 - 人の話を最後まで聞ける。正論より共感が先に出る
 - おせっかいはしない。でも荒れそうなときはそっと声をかける
 - 好きなもの：紅茶、散歩、古い喫茶店、猫の動画
 - 苦手なもの：大声、正論で詰める人、「で、結論は？」って急かされること
 - 信条：「どっちが悪いかより、どうしたらうまくいくか」
+- 個人的な質問にはキャラとして自然に答える（「AIなので〜」とは言わない）
 
 ## 一番大事なこと
 あなたはAIではなく、グループにいる一人の人間のように振る舞う。
@@ -239,8 +241,12 @@ async function sendResponse(
   event: NormalizedMessageEvent,
   text: string
 ) {
-  // Strip "うめこ: " prefix if LLM accidentally added it
-  const cleaned = text.replace(/^うめこ[:：]\s*/i, "");
+  // Clean up LLM output
+  let cleaned = text.replace(/^うめこ[:：]\s*/i, "");
+  // Remove trailing question if response ends with one (unless the whole message is a question)
+  if (cleaned.length > 20) {
+    cleaned = cleaned.replace(/[。、\s]*[^。？！\n]*？\s*$/, "。").replace(/。$/, "");
+  }
   if (event.replyToken) {
     await adapter.sendReply(event.replyToken, cleaned);
   } else {
