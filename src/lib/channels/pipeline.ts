@@ -425,11 +425,10 @@ async function handleGroupMessage(
       }
 
       default: {
-        // Mentioned but normal intent - respond conversationally
-        const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
+        // Mentioned but normal intent - respond to the specific message only
         responseText = await chatCompletion(
           CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-          `グループの直近の会話:\n${msgs.join("\n")}\n\n（あなたへの呼びかけ）: ${textForProcessing}`
+          textForProcessing
         );
         break;
       }
