@@ -434,19 +434,31 @@ async function handleGroupMessage(
       }
     }
   } else {
-    // Not mentioned - only auto-mediate if conflict score is high AND cooldown has passed
+    // Not mentioned - only auto-mediate if conflict score is high
     if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
-      // Check cooldown: don't auto-intervene within 5 minutes of last intervention
-      const lastIntervention = await prisma.intervention.findFirst({
-        where: { conversationId: conversation.id, triggerType: "auto_mediation" },
+      // Count recent auto-interventions (last 30 minutes)
+      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const recentInterventions = await prisma.intervention.findMany({
+        where: {
+          conversationId: conversation.id,
+          triggerType: "auto_mediation",
+          createdAt: { gte: thirtyMinAgo },
+        },
         orderBy: { createdAt: "desc" },
       });
+
+      const interventionCount = recentInterventions.length;
+      const lastIntervention = recentInterventions[0];
       const cooldownMs = 5 * 60 * 1000;
       const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
 
-      if (cooledDown) {
+      // Max 2 auto-interventions per 30 min. After that, only respond if called.
+      if (interventionCount < 2 && cooledDown) {
         const msgs = await getRecentMessages(conversation.id);
-        responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext);
+        const stage = interventionCount === 0
+          ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
+          : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
+        responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext + " " + stage);
         triggerType = "auto_mediation";
       }
     }
