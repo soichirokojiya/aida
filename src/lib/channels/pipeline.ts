@@ -1,7 +1,7 @@
 import { prisma } from "../db/prisma";
 import { NormalizedMessageEvent, ChannelAdapter } from "./types";
 import { detectIntent, Intent } from "../intent/detector";
-import { scoreConflict } from "../conflict/scorer";
+// conflict scoring now handled by unified LLM judgment
 import { checkSafety, checkSafetyRuleBased, getSafetyResponse } from "../safety/checker";
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
@@ -365,37 +365,6 @@ async function handleGroupMessage(
   conversation: { id: string; contextType: string }
 ): Promise<void> {
   const mentioned = isBotMentioned(event.text);
-
-  // If not mentioned, ask LLM if this message is directed at うめこ
-  let isDirectedAtBot = false;
-  if (!mentioned) {
-    const lastBotMsg = await prisma.message.findFirst({
-      where: { conversationId: conversation.id, senderRole: "bot" },
-      orderBy: { timestamp: "desc" },
-    });
-    // Only check if うめこ has recently spoken in this conversation
-    if (lastBotMsg) {
-      const diffMs = event.timestamp.getTime() - lastBotMsg.timestamp.getTime();
-      // Within 10 minutes of last bot message
-      if (diffMs >= 0 && diffMs < 10 * 60 * 1000) {
-        const judgment = await chatCompletionJson<{ directed: boolean }>(
-          `あなたはLINEグループにいる「うめこ」です。
-以下の会話で、最新のメッセージはうめこに向けられたものですか？
-判断基準:
-- うめこの発言への返事や反応 → true
-- うめこに話しかけている → true
-- 他の人同士の会話 → false
-- 独り言や情報共有 → false
-JSONで返してください: {"directed": true/false}`,
-          `うめこの直前の発言: ${lastBotMsg.text}\n最新のメッセージ: ${event.text}`,
-          { purpose: "intent" }
-        );
-        isDirectedAtBot = judgment.directed === true;
-      }
-    }
-  }
-
-  const shouldRespond = mentioned || isDirectedAtBot;
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
   // 1. Rule-based safety check (fast, no LLM)
@@ -410,14 +379,13 @@ JSONで返してください: {"directed": true/false}`,
     return;
   }
 
-  // 2. Parallel: intent + conflict + member count + recent messages
+  // 2. Get context in parallel
   const [intentResult, recentData, memberCount] = await Promise.all([
     detectIntent(textForProcessing),
     getRecentMessages(conversation.id),
     getGroupMemberCount(event.externalThreadId),
   ]);
   const { formatted: recentMessages, memberNames } = recentData;
-  const conflictResult = await scoreConflict(event.text, recentMessages);
   const memberContext = memberNames.length > 0
     ? `（メンバー情報: ${memberNames.join("、")}。聞かれたら名前を教えてOK。自分からは出さない）`
     : "";
@@ -425,8 +393,43 @@ JSONで返してください: {"directed": true/false}`,
     ? `（このグループは${memberCount}人）`
     : "") + memberContext;
 
+  // 3. LLM judgment: is this directed at bot? does it need intervention?
+  let isDirectedAtBot = false;
+  let needsIntervention = false;
+  if (!mentioned) {
+    const lastBotMsg = await prisma.message.findFirst({
+      where: { conversationId: conversation.id, senderRole: "bot" },
+      orderBy: { timestamp: "desc" },
+    });
+    const botContext = lastBotMsg
+      ? `うめこの直前の発言（${Math.round((event.timestamp.getTime() - lastBotMsg.timestamp.getTime()) / 60000)}分前）: ${lastBotMsg.text}`
+      : "うめこはまだこの会話で発言していない";
+
+    const judgment = await chatCompletionJson<{ directed: boolean; intervention: boolean }>(
+      `あなたはLINEグループにいる「うめこ」です。以下を判定してJSON形式で返してください。
+
+directed: このメッセージはうめこに向けられたものか？
+- うめこの発言への返事や反応 → true
+- うめこに話しかけている → true
+- 他の人同士の会話 → false
+
+intervention: うめこが中立的に介入すべき空気か？
+- 会話がピリッとしてきている、すれ違いが起きている → true
+- 否定的・攻撃的なやりとりが続いている → true
+- 普通の会話、報告、雑談 → false
+
+{"directed": true/false, "intervention": true/false}`,
+      `${botContext}\n\n直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新のメッセージ: ${event.text}`,
+      { purpose: "intent" }
+    );
+    isDirectedAtBot = judgment.directed === true;
+    needsIntervention = judgment.intervention === true;
+  }
+
+  const shouldRespond = mentioned || isDirectedAtBot;
+
   // 4. Save message
-  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, conflictResult.score);
+  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, needsIntervention ? 60 : 0);
 
   // 5. Determine if we should respond
   let responseText: string | null = null;
@@ -488,32 +491,29 @@ JSONで返してください: {"directed": true/false}`,
         break;
       }
     }
-  } else {
-    // Not mentioned - only auto-mediate if conflict score is high
-    if (conflictResult.score >= AUTO_MEDIATION_THRESHOLD) {
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
-      const recentInterventions = await prisma.intervention.findMany({
-        where: {
-          conversationId: conversation.id,
-          triggerType: "auto_mediation",
-          createdAt: { gte: thirtyMinAgo },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+  } else if (needsIntervention) {
+    // LLM judged this needs intervention - check cooldown
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const recentInterventions = await prisma.intervention.findMany({
+      where: {
+        conversationId: conversation.id,
+        triggerType: "auto_mediation",
+        createdAt: { gte: thirtyMinAgo },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      const interventionCount = recentInterventions.length;
-      const lastIntervention = recentInterventions[0];
-      const cooldownMs = 5 * 60 * 1000;
-      const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
+    const interventionCount = recentInterventions.length;
+    const lastIntervention = recentInterventions[0];
+    const cooldownMs = 5 * 60 * 1000;
+    const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
 
-      if (interventionCount < 2 && cooledDown) {
-        const { formatted: msgs } = await getRecentMessages(conversation.id);
-        const stage = interventionCount === 0
-          ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
-          : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
-        responseText = await generateMediation(msgs, conversation.contextType, conflictResult.reason + " " + groupContext + " " + stage);
-        triggerType = "auto_mediation";
-      }
+    if (interventionCount < 2 && cooledDown) {
+      const stage = interventionCount === 0
+        ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
+        : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
+      responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stage);
+      triggerType = "auto_mediation";
     }
   }
 
@@ -524,7 +524,7 @@ JSONで返してください: {"directed": true/false}`,
     // Save in background
     const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, responseText)];
     if (triggerType) {
-      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, conflictResult.score, conflictResult.reason, responseText));
+      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, needsIntervention ? 60 : 0, null, responseText));
     }
     Promise.all(saves).catch(() => {});
   }
