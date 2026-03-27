@@ -351,6 +351,26 @@ async function handleGroupMessage(
   conversation: { id: string; contextType: string }
 ): Promise<void> {
   const mentioned = isBotMentioned(event.text);
+
+  // Check if うめこ's last message ended with "？" and this might be a reply
+  let isReplyToBot = false;
+  if (!mentioned) {
+    const lastBotMsg = await prisma.message.findFirst({
+      where: { conversationId: conversation.id, senderRole: "bot" },
+      orderBy: { timestamp: "desc" },
+    });
+    if (lastBotMsg && lastBotMsg.text.trim().endsWith("？")) {
+      // Last bot message was a question - ask LLM if this is a reply to it
+      const judgment = await chatCompletionJson<{ isReply: boolean }>(
+        "以下の会話で、最新のメッセージはうめこの質問への返答ですか？JSONで返してください: {\"isReply\": true/false}",
+        `うめこの質問: ${lastBotMsg.text}\n最新のメッセージ: ${event.text}`,
+        { purpose: "intent" }
+      );
+      isReplyToBot = judgment.isReply === true;
+    }
+  }
+
+  const shouldRespond = mentioned || isReplyToBot;
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
   // 1. Rule-based safety check (fast, no LLM)
@@ -387,8 +407,8 @@ async function handleGroupMessage(
   let responseText: string | null = null;
   let triggerType: string | null = null;
 
-  // Respond only if mentioned by name
-  if (mentioned) {
+  // Respond if mentioned by name or replying to bot's question
+  if (shouldRespond) {
     switch (intentResult.intent) {
       case "rewrite_request": {
         const cleanText = textForProcessing
@@ -426,11 +446,20 @@ async function handleGroupMessage(
       }
 
       default: {
-        // Mentioned but normal intent - respond to the specific message only
-        responseText = await chatCompletion(
-          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-          textForProcessing
-        );
+        if (isReplyToBot) {
+          // Replying to bot's question - include recent context
+          const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
+          responseText = await chatCompletion(
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
+            `直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`
+          );
+        } else {
+          // Direct mention - respond to the specific message
+          responseText = await chatCompletion(
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
+            textForProcessing
+          );
+        }
         break;
       }
     }
