@@ -32,8 +32,7 @@ export default async function ConversationDetailPage({
         <h1 className="text-2xl font-bold mb-2">会話詳細</h1>
         <div className="flex gap-2 text-sm text-gray-500">
           <Badge variant="outline">{conversation.channelType}</Badge>
-          <Badge variant="secondary">{conversation.contextType}</Badge>
-          <span>ID: {conversation.id}</span>
+          <span className="font-mono text-xs">{conversation.externalThreadId.slice(0, 12)}...</span>
         </div>
       </div>
 
@@ -48,15 +47,15 @@ export default async function ConversationDetailPage({
                 key={msg.id}
                 className={`p-3 rounded-lg text-sm ${
                   isBot
-                    ? "bg-blue-50 border-l-4 border-blue-400"
+                    ? "bg-teal-50 border-l-4 border-teal-400"
                     : hasIntervention
                       ? "bg-yellow-50 border-l-4 border-yellow-400"
                       : "bg-white border border-gray-200"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium">
-                    {msg.senderDisplayName || msg.senderId.slice(0, 8)}
+                  <span className="font-medium text-xs">
+                    {isBot ? "うめこ" : msg.senderId.slice(0, 8)}
                   </span>
                   <span className="text-xs text-gray-400">
                     {msg.timestamp.toLocaleString("ja-JP")}
@@ -65,19 +64,6 @@ export default async function ConversationDetailPage({
                     <Badge variant="outline" className="text-xs">
                       {msg.detectedIntent}
                     </Badge>
-                  )}
-                  {msg.conflictScore != null && msg.conflictScore > 0 && (
-                    <span
-                      className={`text-xs font-mono ${
-                        msg.conflictScore >= 60
-                          ? "text-red-600"
-                          : msg.conflictScore >= 30
-                            ? "text-yellow-600"
-                            : "text-green-600"
-                      }`}
-                    >
-                      score:{msg.conflictScore}
-                    </span>
                   )}
                 </div>
                 <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -92,22 +78,12 @@ export default async function ConversationDetailPage({
             {conversation.interventions.map((inv) => (
               <Card key={inv.id}>
                 <CardHeader className="py-3 px-4">
-                  <CardTitle className="text-sm flex items-center gap-2">
+                  <CardTitle className="text-sm">
                     <Badge>{inv.triggerType}</Badge>
-                    {inv.score != null && (
-                      <span className="text-xs font-mono">
-                        score:{inv.score}
-                      </span>
-                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-4 pb-3">
-                  {inv.reason && (
-                    <p className="text-xs text-gray-500 mb-2">{inv.reason}</p>
-                  )}
-                  <p className="text-sm whitespace-pre-wrap">
-                    {inv.responseText}
-                  </p>
+                  <p className="text-sm whitespace-pre-wrap">{inv.responseText}</p>
                   <p className="text-xs text-gray-400 mt-2">
                     {inv.createdAt.toLocaleString("ja-JP")}
                   </p>
