@@ -92,9 +92,16 @@ src/lib/
 └── db/           # Prismaクライアント
 ```
 
+## セキュリティ
+
+- **管理画面**: Basic認証（Middleware）で保護済み
+- **DB**: 実名を保存しない（LINE IDのみ）。表示名はLINE APIからランタイム取得
+- **LINE署名**: crypto.timingSafeEqual で検証
+- **Stripe署名**: constructEvent で検証
+- **ログ**: userIdを出力しない
+
 ## MVPで割り切った点
 
-- **認証なし**: 管理画面は認証なし（本番では要追加）
 - **Slack/Teams**: 設計のみ、実装なし
 - **文脈タイプ推定**: DB上のフィールドのみ、自動推定は未実装
 - **課金**: 未実装
