@@ -24,7 +24,7 @@ export default async function ConversationsPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
+            <TableHead>スレッドID</TableHead>
             <TableHead>チャネル</TableHead>
             <TableHead>最新メッセージ</TableHead>
             <TableHead>メッセージ数</TableHead>
@@ -42,7 +42,7 @@ export default async function ConversationsPage() {
                     href={`/admin/conversations/${conv.id}`}
                     className="text-blue-600 hover:underline font-mono text-xs"
                   >
-                    {conv.id}
+                    {conv.externalThreadId}
                   </Link>
                 </TableCell>
                 <TableCell>
