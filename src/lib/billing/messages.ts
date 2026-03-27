@@ -1,53 +1,37 @@
-export function getPreReminderMessage(checkoutUrl: string): string {
-  return `こんにちは、うめこです。
-
-友だちになってくれてから、もうすぐ1ヶ月ですね。
-これまで使ってみてどうでしたか？
-
-来週から月額プランへの切り替えをお願いすることになります。
-もし続けて使ってもらえるなら、とてもうれしいです。
-
-月額 ¥980
-
-▼ 登録はこちら
-${checkoutUrl}`;
-}
-
-export function getDueReminderMessage(checkoutUrl: string): string {
+export function getDueReminderMessage(dmCheckoutUrl: string): string {
   return `うめこです。
 
 無料おためし期間が今日で終わりになります。
-引き続き使ってもらえる場合は、下のリンクから登録をお願いします。
 
-月額 ¥980
+引き続き使ってもらえる場合は、プランを選んで登録をお願いします。
 
-▼ 登録はこちら
-${checkoutUrl}
+▼ DMプラン（月額¥490）
+1対1でうめこと話せます
+${dmCheckoutUrl}
 
-登録がない場合、明日からは返信ができなくなります。
+グループで使いたい場合は、グループ内で「うめこ」と呼びかけてもらえれば、そこから登録できます。
+
 また使いたくなったら、いつでも戻ってきてくださいね。`;
 }
 
-export function getExpiredReminderMessage(checkoutUrl: string): string {
-  return `うめこです。
+export function getDmExpiredMessage(dmCheckoutUrl: string): string {
+  return `おためし期間が終了しているので、1対1ではお返事ができない状態です。
 
-おためし期間が終了したので、今はお返事ができない状態です。
+▼ DMプラン（月額¥490）
+${dmCheckoutUrl}
 
-また話したいなと思ったら、いつでもここから登録できます。
-
-▼ 登録はこちら
-${checkoutUrl}
-
-待ってますね。`;
+グループでの利用は、グループごとに別途登録できます。`;
 }
 
-export function getExpiredReplyMessage(checkoutUrl: string): string {
-  return `ごめんなさい、おためし期間が終了しているので今はお返事ができません。
+export function getGroupExpiredMessage(groupCheckoutUrl: string): string {
+  return `このグループではまだうめこが有効になってないよ。
 
-引き続き使ってもらえる場合は、こちらから登録をお願いします。
+使うには、このグループ用の利用権が必要です。
 
-▼ 登録はこちら（月額¥980）
-${checkoutUrl}`;
+▼ グループ利用権（月額¥980）
+${groupCheckoutUrl}
+
+誰か1人が登録すれば、グループ全員が使えるようになります。`;
 }
 
 export function getWelcomeMessage(): string {
@@ -60,6 +44,6 @@ export function getWelcomeMessage(): string {
 ・1対1で話しかければ、相談相手になります
 ・「柔らかくして」「まとめて」と言えばOK
 
-1ヶ月間は無料で使えます。
+最初の1ヶ月は無料で使えます。
 気軽に話しかけてみてくださいね。`;
 }

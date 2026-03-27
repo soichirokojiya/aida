@@ -89,18 +89,46 @@ model LineUser {
   displayName       String?
   followedAt        DateTime  @default(now())
   trialEndsAt       DateTime
-  billingStatus     String    @default("trial") // trial, reminder_sent, active, expired, cancelled
-  stripeCustomerId  String?
-  stripeSessionUrl  String?
-  lastReminderType  String?   // pre_reminder, due_reminder, expired_reminder
-  lastReminderAt    DateTime?
+  trialReminderSent Boolean   @default(false)
   unfollowedAt      DateTime?
   lastActiveAt      DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  @@index([billingStatus])
+  dmSubscription    DmSubscription?
+
   @@index([trialEndsAt])
+}
+
+model DmSubscription {
+  id                    String   @id @default(cuid())
+  lineUserId            String   @unique
+  status                String   @default("active") // active, past_due, canceled, expired
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user LineUser @relation(fields: [lineUserId], references: [lineUserId])
+
+  @@index([status])
+}
+
+model GroupSubscription {
+  id                    String   @id @default(cuid())
+  groupId               String   @unique
+  payerLineUserId       String
+  status                String   @default("active") // active, past_due, canceled, expired
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([payerLineUserId])
+  @@index([status])
 }
 
 model GroupMembership {

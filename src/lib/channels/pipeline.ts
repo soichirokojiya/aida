@@ -9,9 +9,9 @@ import { generateSummary } from "../summarize/generator";
 import { chatCompletion, chatCompletionJson } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
-import { isUserActive } from "../billing/check";
-import { getExpiredReplyMessage } from "../billing/messages";
-import { createCheckoutUrl } from "../billing/stripe";
+import { isDmActive, isGroupActive } from "../billing/check";
+import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages";
+import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
 
 const BOT_NAME = "うめこ";
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
@@ -534,16 +534,36 @@ export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
-  // Check billing status for DM (group messages always work)
+  // Check billing status
   if (event.isDirectMessage) {
-    const active = await isUserActive(event.senderId);
+    const active = await isDmActive(event.senderId);
     if (!active) {
       try {
-        const url = await createCheckoutUrl(event.senderId);
-        await sendResponse(adapter, event, getExpiredReplyMessage(url));
+        const url = await createDmCheckoutUrl(event.senderId);
+        await sendResponse(adapter, event, getDmExpiredMessage(url));
       } catch {
-        await sendResponse(adapter, event, "おためし期間が終了しています。引き続きご利用いただくには、月額プランへの登録をお願いします。");
+        await sendResponse(adapter, event, "おためし期間が終了しています。DMプラン（月額¥490）への登録をお願いします。");
       }
+      return;
+    }
+  } else {
+    const active = await isGroupActive(event.externalThreadId);
+    if (!active) {
+      // Only show payment message if someone calls うめこ
+      const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
+      if (mentioned) {
+        try {
+          const url = await createGroupCheckoutUrl(event.senderId, event.externalThreadId);
+          await sendResponse(adapter, event, getGroupExpiredMessage(url));
+        } catch {
+          await sendResponse(adapter, event, "このグループではまだうめこが有効になっていません。グループ利用権（月額¥980）への登録をお願いします。");
+        }
+        return;
+      }
+      // Not mentioned and group not active → silently ignore
+      // Still save message for tracking
+      const conversation = await getOrCreateConversation(event);
+      await saveMessage(conversation.id, event, "normal", 0);
       return;
     }
   }

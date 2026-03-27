@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { lineAdapter } from "@/lib/channels/line";
 import { processMessage } from "@/lib/channels/pipeline";
 import { prisma } from "@/lib/db/prisma";
-import { getWelcomeMessage } from "@/lib/billing/messages";
+
 
 interface RawLineEvent {
   type: string;
@@ -31,26 +31,14 @@ async function handleFollow(event: RawLineEvent) {
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
 
-  const existing = await prisma.lineUser.findUnique({ where: { lineUserId: userId } });
-
-  if (existing) {
-    // Re-follow: clear unfollow, reset trial if not already paid
-    await prisma.lineUser.update({
-      where: { lineUserId: userId },
-      data: {
-        unfollowedAt: null,
-        ...(existing.billingStatus === "active" ? {} : { billingStatus: "trial", trialEndsAt }),
-      },
-    });
-  } else {
-    await prisma.lineUser.create({
-      data: {
-        lineUserId: userId,
-        trialEndsAt,
-        billingStatus: "trial",
-      },
-    });
-  }
+  await prisma.lineUser.upsert({
+    where: { lineUserId: userId },
+    update: { unfollowedAt: null },
+    create: {
+      lineUserId: userId,
+      trialEndsAt,
+    },
+  });
 
   // Welcome message is handled by LINE Official Account's greeting message
 }
