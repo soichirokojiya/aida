@@ -461,7 +461,28 @@ async function handleGroupMessage(
     return;
   }
 
-  // 2. Get context in parallel
+  // 2. Check for cancellation request in group
+  const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
+  if (cancelKeywords.test(event.text)) {
+    const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
+    const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+
+    const subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId;
+    if (subId) {
+      const { createPortalUrl } = await import("../billing/portal");
+      const portalUrl = await createPortalUrl(subId);
+      if (portalUrl) {
+        await saveMessage(conversation.id, event, "normal", 0);
+        await sendResponse(adapter, event, `わかったよ。ここから手続きできるよ。\n\n▼ 契約管理ページ\n${portalUrl}\n\nブロックだけでは課金は止まらないから、ここから手続きしてね。`);
+        return;
+      }
+    }
+    await saveMessage(conversation.id, event, "normal", 0);
+    await sendResponse(adapter, event, `今は有料プランに登録されていない状態だよ。\n\nもし何か困っていることがあれば、info@cfac.co.jp に連絡してみてね。`);
+    return;
+  }
+
+  // 3. Get context in parallel
   const [intentResult, recentData, memberCount] = await Promise.all([
     detectIntent(textForProcessing),
     getRecentMessages(conversation.id),
