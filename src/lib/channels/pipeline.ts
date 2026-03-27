@@ -222,10 +222,12 @@ async function sendResponse(
   event: NormalizedMessageEvent,
   text: string
 ) {
+  // Strip "うめこ: " prefix if LLM accidentally added it
+  const cleaned = text.replace(/^うめこ[:：]\s*/i, "");
   if (event.replyToken) {
-    await adapter.sendReply(event.replyToken, text);
+    await adapter.sendReply(event.replyToken, cleaned);
   } else {
-    await adapter.sendPush(event.externalThreadId, text);
+    await adapter.sendPush(event.externalThreadId, cleaned);
   }
 }
 
