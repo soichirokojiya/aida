@@ -78,6 +78,21 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── 掲載媒体 ── */}
+      <section className="py-10 px-6 bg-white border-b border-gray-100">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-center text-xs text-gray-400 mb-6">掲載媒体</p>
+          <div className="flex items-center justify-center gap-8 md:gap-12 flex-wrap opacity-70">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/media-mainichi.png" alt="毎日新聞" className="h-8 md:h-10 object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/media-nishinippon.png" alt="西日本新聞" className="h-8 md:h-10 object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/media-niconico.png" alt="ニコニコニュース" className="h-6 md:h-8 object-contain" />
+          </div>
+        </div>
+      </section>
+
       {/* ── 共感 ── */}
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
