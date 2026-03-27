@@ -23,6 +23,9 @@ export default function AdminLayout({
         <Link href="/admin/usage" className="text-sm text-gray-600 hover:text-gray-900">
           API使用量
         </Link>
+        <Link href="/admin/kpi" className="text-sm text-gray-600 hover:text-gray-900">
+          KPI
+        </Link>
       </nav>
       <main className="p-6 max-w-6xl mx-auto">{children}</main>
     </div>
