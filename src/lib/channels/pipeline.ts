@@ -6,7 +6,7 @@ import { checkSafety, checkSafetyRuleBased, getSafetyResponse } from "../safety/
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
-import { chatCompletion } from "../llm/client";
+import { chatCompletion, chatCompletionJson } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
 import { isUserActive } from "../billing/check";
