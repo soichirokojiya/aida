@@ -352,25 +352,36 @@ async function handleGroupMessage(
 ): Promise<void> {
   const mentioned = isBotMentioned(event.text);
 
-  // Check if うめこ's last message ended with "？" and this might be a reply
-  let isReplyToBot = false;
+  // If not mentioned, ask LLM if this message is directed at うめこ
+  let isDirectedAtBot = false;
   if (!mentioned) {
     const lastBotMsg = await prisma.message.findFirst({
       where: { conversationId: conversation.id, senderRole: "bot" },
       orderBy: { timestamp: "desc" },
     });
-    if (lastBotMsg && lastBotMsg.text.trim().endsWith("？")) {
-      // Last bot message was a question - ask LLM if this is a reply to it
-      const judgment = await chatCompletionJson<{ isReply: boolean }>(
-        "以下の会話で、最新のメッセージはうめこの質問への返答ですか？JSONで返してください: {\"isReply\": true/false}",
-        `うめこの質問: ${lastBotMsg.text}\n最新のメッセージ: ${event.text}`,
-        { purpose: "intent" }
-      );
-      isReplyToBot = judgment.isReply === true;
+    // Only check if うめこ has recently spoken in this conversation
+    if (lastBotMsg) {
+      const diffMs = event.timestamp.getTime() - lastBotMsg.timestamp.getTime();
+      // Within 10 minutes of last bot message
+      if (diffMs >= 0 && diffMs < 10 * 60 * 1000) {
+        const judgment = await chatCompletionJson<{ directed: boolean }>(
+          `あなたはLINEグループにいる「うめこ」です。
+以下の会話で、最新のメッセージはうめこに向けられたものですか？
+判断基準:
+- うめこの発言への返事や反応 → true
+- うめこに話しかけている → true
+- 他の人同士の会話 → false
+- 独り言や情報共有 → false
+JSONで返してください: {"directed": true/false}`,
+          `うめこの直前の発言: ${lastBotMsg.text}\n最新のメッセージ: ${event.text}`,
+          { purpose: "intent" }
+        );
+        isDirectedAtBot = judgment.directed === true;
+      }
     }
   }
 
-  const shouldRespond = mentioned || isReplyToBot;
+  const shouldRespond = mentioned || isDirectedAtBot;
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
   // 1. Rule-based safety check (fast, no LLM)
@@ -446,8 +457,8 @@ async function handleGroupMessage(
       }
 
       default: {
-        if (isReplyToBot) {
-          // Replying to bot's question - include recent context
+        if (isDirectedAtBot) {
+          // Continuing conversation with bot - include recent context
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
             CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
