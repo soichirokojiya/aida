@@ -273,8 +273,54 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Slackでも使える ── */}
+      {/* ── 親子でも、うめこ ── */}
       <section className="py-20 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-center text-teal-600 text-sm font-medium mb-3">親子でも、うめこ</p>
+          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+            言いすぎる前に、ひと呼吸
+          </h2>
+          <p className="text-center text-gray-500 text-base mb-12 max-w-lg mx-auto">
+            反抗期の会話も、少しやわらかく。
+            <br />
+            親子のLINEグループにうめこを入れておけば、
+            ぶつかりそうなとき、少しだけ空気を変えてくれます。
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-gray-100">
+              <p className="text-2xl mb-3">📚</p>
+              <p className="font-medium text-gray-800 mb-2">宿題・勉強</p>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                「なんで宿題やってないの」が口癖になっていませんか。
+                うめこは「どこまでやった？」という聞き方を提案したり、
+                言い方がきつくなりそうなとき、トーンを整えてくれます。
+              </p>
+            </div>
+            <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-gray-100">
+              <p className="text-2xl mb-3">📱</p>
+              <p className="font-medium text-gray-800 mb-2">スマホ・ゲーム</p>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                「いい加減にしなさい」と言いたくなる場面。
+                うめこがいると、ルールの話し合いを
+                &ldquo;対決&rdquo;ではなく&ldquo;相談&rdquo;に変えるきっかけになります。
+              </p>
+            </div>
+            <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-gray-100">
+              <p className="text-2xl mb-3">🎯</p>
+              <p className="font-medium text-gray-800 mb-2">進路・習い事</p>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                子どもの意見と親の心配がぶつかりやすいテーマ。
+                うめこは、どちらの気持ちも否定せずに
+                「何がすれ違っているのか」を整理します。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Slackでも使える ── */}
+      <section className="py-20 px-6 bg-[#F6FAF8]">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-teal-600 text-sm font-medium mb-3">Slackでも使える</p>
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
