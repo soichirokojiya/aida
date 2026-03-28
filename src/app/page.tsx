@@ -84,11 +84,11 @@ export default function LandingPage() {
           <p className="text-center text-xs text-gray-400 mb-6">掲載媒体</p>
           <div className="flex items-center justify-center gap-10 md:gap-16 flex-wrap opacity-70">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/media-mainichi.png" alt="毎日新聞" className="h-7 object-contain" />
+            <img src="/media-mainichi.png" alt="毎日新聞" className="w-32 md:w-36 object-contain" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/media-nishinippon.png" alt="西日本新聞" className="h-7 object-contain" />
+            <img src="/media-nishinippon.png" alt="西日本新聞" className="w-32 md:w-36 object-contain" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/media-niconico.png" alt="ニコニコニュース" className="h-7 object-contain" />
+            <img src="/media-niconico.png" alt="ニコニコニュース" className="w-32 md:w-36 object-contain" />
           </div>
         </div>
       </section>
