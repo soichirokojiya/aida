@@ -76,15 +76,12 @@ export async function chatCompletion(
     userContent = userMessage;
   }
 
-  const tools = options?.webSearch ? [{ type: "web_search_preview" as const }] : undefined;
-
   const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userContent as never },
     ],
-    tools: tools as never,
     temperature: 0.3,
     max_completion_tokens: 1024,
   });
