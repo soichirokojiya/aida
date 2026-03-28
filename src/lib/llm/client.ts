@@ -67,7 +67,7 @@ export async function chatCompletion(
       { role: "user", content: userMessage },
     ],
     temperature: 0.3,
-    max_tokens: 1024,
+    max_completion_tokens: 1024,
   });
   const elapsed = Date.now() - start;
   trackUsage(ctx, model, response.usage ?? undefined, elapsed);
@@ -88,7 +88,7 @@ export async function chatCompletionJson<T>(
       { role: "user", content: userMessage },
     ],
     temperature: 0.1,
-    max_tokens: 256,
+    max_completion_tokens: 256,
     response_format: { type: "json_object" },
   });
   const elapsed = Date.now() - start;
