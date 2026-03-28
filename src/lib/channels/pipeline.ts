@@ -829,7 +829,14 @@ export async function processMessage(
     if (event.isDirectMessage) {
       await sendResponse(adapter, event, "ごめんね、動画は読み取れないんだ。内容をテキストで教えてもらえると助かるよ。");
     }
-    // In group, silently ignore video
+    return;
+  }
+
+  // PDF/file: save content to conversation history but don't auto-respond
+  // User will ask about it with a follow-up message
+  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:")) {
+    const conversation = await getOrCreateConversation(event);
+    await saveMessage(conversation.id, event, "normal", 0);
     return;
   }
 
