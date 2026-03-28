@@ -822,6 +822,15 @@ export async function processMessage(
     }
   }
 
+  // Video: respond that we can't process it
+  if (event.text === "[動画]") {
+    if (event.isDirectMessage) {
+      await sendResponse(adapter, event, "ごめんね、動画は読み取れないんだ。内容をテキストで教えてもらえると助かるよ。");
+    }
+    // In group, silently ignore video
+    return;
+  }
+
   const conversation = await getOrCreateConversation(event);
 
   if (event.isDirectMessage) {

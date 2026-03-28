@@ -4,7 +4,7 @@ interface LineEvent {
   type: string;
   replyToken?: string;
   source?: { type: string; groupId?: string; roomId?: string; userId?: string };
-  message?: { id: string; type: string; text?: string; duration?: number; fileName?: string; fileSize?: number; contentProvider?: { type: string } };
+  message?: { id: string; type: string; text?: string; duration?: number; fileName?: string; fileSize?: number; contentProvider?: { type: string }; packageId?: string; stickerId?: string; keywords?: string[] };
   timestamp: number;
 }
 
@@ -67,7 +67,7 @@ async function getLineContent(messageId: string, mimeType: string): Promise<stri
   }
 }
 
-const SUPPORTED_MESSAGE_TYPES = new Set(["text", "image", "audio", "file"]);
+const SUPPORTED_MESSAGE_TYPES = new Set(["text", "image", "audio", "file", "sticker", "video"]);
 
 export const lineAdapter: ChannelAdapter = {
   channelType: "line",
@@ -194,6 +194,15 @@ async function enrichLineEvent(event: NormalizedMessageEvent): Promise<Normalize
       event.audioUrl = dataUrl;
       if (!event.text) event.text = "[音声メッセージ]";
     }
+  } else if (msgType === "sticker") {
+    const keywords = rawEvent.message?.keywords;
+    if (keywords?.length) {
+      event.text = `[スタンプ: ${keywords.join(", ")}]`;
+    } else {
+      event.text = "[スタンプ]";
+    }
+  } else if (msgType === "video") {
+    event.text = "[動画]";
   } else if (msgType === "file") {
     const fileName = rawEvent.message?.fileName || "";
     if (fileName.toLowerCase().endsWith(".pdf")) {
