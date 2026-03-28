@@ -288,8 +288,16 @@ async function saveBotMessage(conversationId: string, text: string) {
 function cleanLlmOutput(text: string): string {
   let cleaned = text.replace(/^うめこ[:：]\s*/i, "");
 
-  // Remove trailing questions from longer responses (gpt-4o-mini tends to add them)
-  // Keep if the whole message is a question (short, single sentence)
+  // Remove Markdown bold **text** → text
+  cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, "$1");
+
+  // Remove Markdown links [text](url) → text
+  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");
+
+  // Remove bare URLs with tracking params (from web search)
+  cleaned = cleaned.replace(/\(https?:\/\/[^\s)]+\)/g, "");
+
+  // Remove trailing questions from longer responses
   const sentences = cleaned.split(/(?<=[。？！\n])/);
   if (sentences.length >= 2) {
     const last = sentences[sentences.length - 1].trim();
