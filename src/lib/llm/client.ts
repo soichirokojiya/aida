@@ -57,7 +57,7 @@ export async function chatCompletion(
   systemPrompt: string,
   userMessage: string,
   ctx: LlmContext = { purpose: "chat" },
-  options?: { imageUrls?: string[] }
+  options?: { imageUrls?: string[]; webSearch?: boolean }
 ): Promise<string> {
   const model = selectModel(ctx.purpose);
   const start = Date.now();
@@ -76,12 +76,15 @@ export async function chatCompletion(
     userContent = userMessage;
   }
 
+  const tools = options?.webSearch ? [{ type: "web_search_preview" as const }] : undefined;
+
   const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userContent as never },
     ],
+    tools: tools as never,
     temperature: 0.3,
     max_completion_tokens: 1024,
   });

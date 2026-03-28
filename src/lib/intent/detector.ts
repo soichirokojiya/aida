@@ -6,6 +6,7 @@ export type Intent =
   | "rewrite_request"
   | "summarize_request"
   | "mediation_request"
+  | "search_request"
   | "conflict_signal"
   | "cooldown_needed"
   | "clarification_needed";
@@ -42,6 +43,17 @@ const MEDIATION_KEYWORDS = [
   "どうすればいい",
 ];
 
+const SEARCH_KEYWORDS = [
+  "調べて",
+  "検索して",
+  "ググって",
+  "最新の",
+  "今の",
+  "ニュース",
+  "何が起きてる",
+  "教えて.*について",
+];
+
 function ruleBasedDetect(text: string): IntentResult | null {
   const lower = text.toLowerCase();
 
@@ -56,6 +68,10 @@ function ruleBasedDetect(text: string): IntentResult | null {
   for (const kw of MEDIATION_KEYWORDS) {
     if (lower.includes(kw))
       return { intent: "mediation_request", confidence: 0.8 };
+  }
+  for (const kw of SEARCH_KEYWORDS) {
+    if (new RegExp(kw).test(lower))
+      return { intent: "search_request", confidence: 0.85 };
   }
 
   return null;

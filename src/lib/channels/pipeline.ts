@@ -410,6 +410,18 @@ async function handleDirectMessage(
       break;
     }
 
+    case "search_request": {
+      const memory = await getConversationMemory(conversation.id);
+      const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
+      responseText = await chatCompletion(
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。`,
+        `${memoryContext}\n\nユーザー: ${event.text}`,
+        { purpose: "chat" },
+        { webSearch: true }
+      );
+      break;
+    }
+
     default: {
       // Classify complexity to route model
       const complexity = await chatCompletionJson<{ complex: boolean }>(
@@ -438,11 +450,12 @@ complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹
         : "";
 
       const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
+      const needsSearch = /調べて|検索して|ググって|最新の|今の.*ニュース/i.test(event.text);
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}`,
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}${needsSearch ? "\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。" : ""}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
         { purpose: chatPurpose },
-        { imageUrls: event.imageUrls }
+        { imageUrls: event.imageUrls, webSearch: needsSearch }
       );
       break;
     }
@@ -622,19 +635,33 @@ complex: うめこが丁寧に考えて答えるべき内容か？
         break;
       }
 
+      case "search_request": {
+        const memory = await getConversationMemory(conversation.id);
+        const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
+        const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
+        responseText = await chatCompletion(
+          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。`,
+          `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
+          { purpose: "chat" },
+          { webSearch: true }
+        );
+        break;
+      }
+
       default: {
         const memory = await getConversationMemory(conversation.id);
         const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
         const chatPurpose = isComplex ? "chat" : "chat_simple";
         const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
+        const needsSearch = /調べて|検索して|ググって|最新の|今の.*ニュース/i.test(textForProcessing);
 
         if (isDirectedAtBot) {
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}${needsSearch ? "\nWeb検索が使えます。" : ""}`,
             `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
             { purpose: chatPurpose },
-            { imageUrls: event.imageUrls }
+            { imageUrls: event.imageUrls, webSearch: needsSearch }
           );
         } else {
           responseText = await chatCompletion(
