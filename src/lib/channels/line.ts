@@ -4,7 +4,7 @@ interface LineEvent {
   type: string;
   replyToken?: string;
   source?: { type: string; groupId?: string; roomId?: string; userId?: string };
-  message?: { id: string; type: string; text?: string };
+  message?: { id: string; type: string; text?: string; duration?: number; contentProvider?: { type: string } };
   timestamp: number;
 }
 
@@ -51,6 +51,24 @@ async function getUserDisplayName(userId: string): Promise<string | null> {
   }
 }
 
+// Fetch binary content from LINE Content API and return as base64 data URL
+async function getLineContent(messageId: string, mimeType: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://api-data.line.me/v2/bot/message/${messageId}/content`,
+      { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+    );
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    return `data:${mimeType};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+const SUPPORTED_MESSAGE_TYPES = new Set(["text", "image", "audio"]);
+
 export const lineAdapter: ChannelAdapter = {
   channelType: "line",
 
@@ -63,17 +81,20 @@ export const lineAdapter: ChannelAdapter = {
     if (!webhookBody.events) return [];
 
     return webhookBody.events
-      .filter((e) => e.type === "message" && e.message?.type === "text")
+      .filter((e) => e.type === "message" && e.message && SUPPORTED_MESSAGE_TYPES.has(e.message.type))
       .map((e) => {
         const isGroup = e.source?.type === "group" || e.source?.type === "room";
         const threadId = e.source?.groupId || e.source?.roomId || e.source?.userId || "unknown";
+        const msgType = e.message!.type;
 
         return {
           channelType: "line" as const,
           externalThreadId: threadId,
           externalMessageId: e.message!.id,
           senderId: e.source?.userId || "unknown",
-          text: e.message!.text!,
+          text: msgType === "text" ? e.message!.text! : "",
+          // image/audio content will be fetched asynchronously in enrichLineEvent
+          _messageType: msgType,
           timestamp: new Date(e.timestamp),
           replyToken: e.replyToken,
           isDirectMessage: !isGroup,
@@ -125,4 +146,29 @@ async function getGroupMemberCount(groupId: string): Promise<number | null> {
   }
 }
 
-export { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount };
+// Enrich a normalized event with image/audio content (async fetch from LINE Content API)
+async function enrichLineEvent(event: NormalizedMessageEvent): Promise<NormalizedMessageEvent> {
+  const rawEvent = event.rawEvent as LineEvent;
+  const msgType = rawEvent.message?.type;
+  const msgId = rawEvent.message?.id;
+
+  if (!msgId) return event;
+
+  if (msgType === "image") {
+    const dataUrl = await getLineContent(msgId, "image/jpeg");
+    if (dataUrl) {
+      event.imageUrls = [dataUrl];
+      if (!event.text) event.text = "[画像]";
+    }
+  } else if (msgType === "audio") {
+    const dataUrl = await getLineContent(msgId, "audio/m4a");
+    if (dataUrl) {
+      event.audioUrl = dataUrl;
+      if (!event.text) event.text = "[音声メッセージ]";
+    }
+  }
+
+  return event;
+}
+
+export { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount, enrichLineEvent };

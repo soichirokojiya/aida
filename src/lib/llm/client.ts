@@ -56,15 +56,31 @@ async function trackUsage(
 export async function chatCompletion(
   systemPrompt: string,
   userMessage: string,
-  ctx: LlmContext = { purpose: "chat" }
+  ctx: LlmContext = { purpose: "chat" },
+  options?: { imageUrls?: string[] }
 ): Promise<string> {
   const model = selectModel(ctx.purpose);
   const start = Date.now();
+
+  // Build user content: text + optional images
+  let userContent: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+  if (options?.imageUrls?.length) {
+    userContent = [
+      { type: "text", text: userMessage },
+      ...options.imageUrls.map((url) => ({
+        type: "image_url" as const,
+        image_url: { url },
+      })),
+    ];
+  } else {
+    userContent = userMessage;
+  }
+
   const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
+      { role: "user", content: userContent as never },
     ],
     temperature: 0.3,
     max_completion_tokens: 1024,
@@ -72,6 +88,27 @@ export async function chatCompletion(
   const elapsed = Date.now() - start;
   trackUsage(ctx, model, response.usage ?? undefined, elapsed);
   return response.choices[0]?.message?.content || "";
+}
+
+export async function transcribeAudio(audioDataUrl: string): Promise<string> {
+  // Extract base64 data from data URL
+  const match = audioDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return "";
+
+  const buffer = Buffer.from(match[2], "base64");
+  const file = new File([buffer], "audio.m4a", { type: match[1] });
+
+  try {
+    const response = await getOpenAI().audio.transcriptions.create({
+      model: "whisper-1",
+      file,
+      language: "ja",
+    });
+    return response.text || "";
+  } catch (err) {
+    console.warn("Audio transcription failed:", err instanceof Error ? err.message : err);
+    return "";
+  }
 }
 
 export async function chatCompletionJson<T>(

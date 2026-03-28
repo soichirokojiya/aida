@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { lineAdapter } from "@/lib/channels/line";
+import { lineAdapter, enrichLineEvent } from "@/lib/channels/line";
 import { processMessage } from "@/lib/channels/pipeline";
 import { prisma } from "@/lib/db/prisma";
 
@@ -103,12 +103,14 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Handle message events
-  const events = lineAdapter.normalizeEvents(body);
-  for (const event of events) {
+  // Handle message events (text, image, audio)
+  const rawEvents = lineAdapter.normalizeEvents(body);
+  for (const rawEvent of rawEvents) {
     const start = Date.now();
     try {
-      console.log(`Processing: ${event.isDirectMessage ? "DM" : "Group"} from ${event.senderId.slice(0, 8)}`);
+      // Fetch image/audio content from LINE Content API
+      const event = await enrichLineEvent(rawEvent);
+      console.log(`Processing: ${event.isDirectMessage ? "DM" : "Group"} from ${event.senderId.slice(0, 8)} [${event.imageUrls ? "image" : event.audioUrl ? "audio" : "text"}]`);
       await processMessage(event, lineAdapter);
       console.log(`Done: ${Date.now() - start}ms`);
     } catch (err) {

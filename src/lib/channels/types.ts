@@ -7,6 +7,8 @@ export interface NormalizedMessageEvent {
   senderId: string;
   senderDisplayName?: string;
   text: string;
+  imageUrls?: string[];       // base64 data URLs or https URLs
+  audioUrl?: string;          // URL to audio content
   timestamp: Date;
   replyToken?: string;
   isDirectMessage: boolean;

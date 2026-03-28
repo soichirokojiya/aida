@@ -6,7 +6,7 @@ import { checkSafety, checkSafetyRuleBased, getSafetyResponse } from "../safety/
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
-import { chatCompletion, chatCompletionJson } from "../llm/client";
+import { chatCompletion, chatCompletionJson, transcribeAudio } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
 import { isDmActive, isGroupActive } from "../billing/check";
@@ -434,10 +434,12 @@ complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹
         ? `\n\n直近の会話:\n${recentMsgs.slice(0, -1).join("\n")}`
         : "";
 
+      const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
-        { purpose: chatPurpose }
+        { purpose: chatPurpose },
+        { imageUrls: event.imageUrls }
       );
       break;
     }
@@ -620,19 +622,22 @@ complex: うめこが丁寧に考えて答えるべき内容か？
         const memory = await getConversationMemory(conversation.id);
         const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
         const chatPurpose = isComplex ? "chat" : "chat_simple";
+        const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
 
         if (isDirectedAtBot) {
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
             `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
-            { purpose: chatPurpose }
+            { purpose: chatPurpose },
+            { imageUrls: event.imageUrls }
           );
         } else {
           responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
             textForProcessing,
-            { purpose: chatPurpose }
+            { purpose: chatPurpose },
+            { imageUrls: event.imageUrls }
           );
         }
         break;
@@ -806,6 +811,16 @@ export async function processMessage(
     });
   }
 
+
+  // Transcribe audio messages to text
+  if (event.audioUrl && (!event.text || event.text === "[音声メッセージ]")) {
+    const transcription = await transcribeAudio(event.audioUrl);
+    if (transcription) {
+      event.text = transcription;
+    } else {
+      event.text = "[音声メッセージ（文字起こしできませんでした）]";
+    }
+  }
 
   const conversation = await getOrCreateConversation(event);
 
