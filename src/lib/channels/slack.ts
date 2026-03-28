@@ -236,6 +236,33 @@ async function enrichSlackEvent(event: NormalizedMessageEvent): Promise<Normaliz
           event.text = `[PDF: ${name}（読み取れませんでした）]`;
         }
 
+      } else if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || mime === "application/msword" || name.endsWith(".docx") || name.endsWith(".doc")) {
+        // Word documents: download and use LLM to extract content from the file
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        const { getOpenAI } = await import("../llm/client");
+        const response = await getOpenAI().chat.completions.create({
+          model: "gpt-5.4-mini",
+          messages: [
+            { role: "system", content: "添付されたWord文書の内容をできるだけ正確に文字起こししてください。" },
+            {
+              role: "user",
+              content: [
+                { type: "file", file: { file_data: `data:${mime};base64,${Buffer.from(buffer).toString("base64")}`, filename: name } },
+                { type: "text", text: "この文書の内容を読み取ってください。" },
+              ] as never,
+            },
+          ],
+          max_completion_tokens: 4096,
+        });
+        const docText = response.choices[0]?.message?.content || "";
+        if (docText) {
+          event.text = `[文書: ${name}]\n${docText}`;
+        } else {
+          event.text = `[文書: ${name}（読み取れませんでした）]`;
+        }
+
       } else if (mime === "video/mp4" || mime.startsWith("video/")) {
         event.text = "[動画]";
       }

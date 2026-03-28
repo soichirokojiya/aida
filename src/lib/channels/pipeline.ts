@@ -818,10 +818,27 @@ export async function processMessage(
     return;
   }
 
-  // PDF/file: save content to conversation history but don't auto-respond
-  // User will ask about it with a follow-up message
-  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:")) {
+  // File/video messages: save to conversation history but don't auto-respond
+  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text === "[動画]") {
     const conversation = await getOrCreateConversation(event);
+    await saveMessage(conversation.id, event, "normal", 0);
+    return;
+  }
+
+  // Image-only messages: describe the image and save description, but don't respond
+  if (event.text === "[画像]" && event.imageUrls?.length) {
+    const conversation = await getOrCreateConversation(event);
+    try {
+      const description = await chatCompletion(
+        "画像の内容を簡潔に日本語で説明してください。200文字以内で。",
+        "この画像の内容を説明してください。",
+        { purpose: "intent" },
+        { imageUrls: event.imageUrls }
+      );
+      event.text = `[画像: ${description}]`;
+    } catch {
+      // Keep as [画像] if description fails
+    }
     await saveMessage(conversation.id, event, "normal", 0);
     return;
   }

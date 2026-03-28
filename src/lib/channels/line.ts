@@ -224,6 +224,43 @@ async function enrichLineEvent(event: NormalizedMessageEvent): Promise<Normalize
         console.warn("PDF fetch failed:", err instanceof Error ? err.message : err);
         event.text = `[PDF: ${fileName}（取得に失敗しました）]`;
       }
+    } else if (fileName.toLowerCase().endsWith(".docx") || fileName.toLowerCase().endsWith(".doc")) {
+      try {
+        const res = await fetch(
+          `https://api-data.line.me/v2/bot/message/${msgId}/content`,
+          { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+        );
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const mime = fileName.toLowerCase().endsWith(".docx")
+            ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            : "application/msword";
+          const { getOpenAI } = await import("../llm/client");
+          const response = await getOpenAI().chat.completions.create({
+            model: "gpt-5.4-mini",
+            messages: [
+              { role: "system", content: "添付されたWord文書の内容をできるだけ正確に文字起こししてください。" },
+              {
+                role: "user",
+                content: [
+                  { type: "file", file: { file_data: `data:${mime};base64,${Buffer.from(buffer).toString("base64")}`, filename: fileName } },
+                  { type: "text", text: "この文書の内容を読み取ってください。" },
+                ] as never,
+              },
+            ],
+            max_completion_tokens: 4096,
+          });
+          const docText = response.choices[0]?.message?.content || "";
+          if (docText) {
+            event.text = `[文書: ${fileName}]\n${docText}`;
+          } else {
+            event.text = `[文書: ${fileName}（読み取れませんでした）]`;
+          }
+        }
+      } catch (err) {
+        console.warn("Word doc fetch failed:", err instanceof Error ? err.message : err);
+        event.text = `[文書: ${fileName}（取得に失敗しました）]`;
+      }
     } else {
       event.text = `[ファイル: ${fileName}]`;
     }
