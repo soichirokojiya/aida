@@ -20,6 +20,7 @@ model Conversation {
   messages      Message[]
   interventions Intervention[]
   summaries     ConversationSummary[]
+  relationship  GroupRelationship?
 
   @@unique([channelType, externalThreadId])
   @@index([updatedAt])
@@ -130,6 +131,34 @@ model GroupSubscription {
   @@index([groupId])
   @@index([payerLineUserId])
   @@index([status])
+}
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique  // lineUserId or slackUserId:teamId
+  channelType     String             // line, slack
+  displayName     String?
+  personality     String?            // 性格傾向メモ
+  topics          String?            // よく相談するテーマ
+  preferences     String?            // 対応上の注意点
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  @@index([channelType])
+}
+
+model GroupRelationship {
+  id              String   @id @default(cuid())
+  conversationId  String   @unique
+  members         Json?              // メンバー情報 { "Aさん": { role, sensitivity } }
+  relationships   Json?              // 関係性 [{ pair, status, pastConflicts, effectiveMediation }]
+  groupNorms      String?            // グループの空気感メモ
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
 }
 
 model ConversationSummary {

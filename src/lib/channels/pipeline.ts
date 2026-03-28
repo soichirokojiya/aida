@@ -526,7 +526,7 @@ async function handleGroupMessage(
   const mentioned = isBotMentioned(event.text);
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
 
-  // 1. Rule-based safety check (fast, no LLM)
+  // ── Layer 0: Safety check (rule-based, free) ──
   const safetyRuleResult = checkSafetyRuleBased(event.text);
   if (safetyRuleResult && !safetyRuleResult.isSafe) {
     const safetyResponse = getSafetyResponse();
@@ -538,27 +538,21 @@ async function handleGroupMessage(
     return;
   }
 
-  // 2. Check for cancellation request in group (skip for file/image/audio content)
+  // ── Cancellation check ──
   const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:");
   const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
   if (!isMediaMessage && cancelKeywords.test(event.text)) {
     let subId: string | undefined;
-
     if (event.channelType === "slack") {
       const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
-      const slackDmSub = await prisma.slackDmSubscription.findUnique({
-        where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } },
-      });
-      const slackChannelSub = await prisma.slackChannelSubscription.findFirst({
-        where: { payerSlackUserId: event.senderId, status: "active" },
-      });
+      const slackDmSub = await prisma.slackDmSubscription.findUnique({ where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } } });
+      const slackChannelSub = await prisma.slackChannelSubscription.findFirst({ where: { payerSlackUserId: event.senderId, status: "active" } });
       subId = slackDmSub?.stripeSubscriptionId || slackChannelSub?.stripeSubscriptionId || undefined;
     } else {
       const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
       const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
       subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId || undefined;
     }
-
     if (subId) {
       const { createPortalUrl } = await import("../billing/portal");
       const portalUrl = await createPortalUrl(subId);
@@ -573,211 +567,121 @@ async function handleGroupMessage(
     return;
   }
 
-  // 3. Get context in parallel
-  const [intentResult, recentData, memberCount] = await Promise.all([
-    detectIntent(textForProcessing),
-    getRecentMessages(conversation.id),
+  // ── Get context ──
+  const [recentData, memberCount, relationshipCtx] = await Promise.all([
+    getRecentMessages(conversation.id, 5),
     getGroupMemberCount(event.externalThreadId),
+    import("../memory/profile").then(m => m.getGroupRelationshipContext(conversation.id)),
   ]);
   const { formatted: recentMessages, memberNames } = recentData;
   const memberContext = memberNames.length > 0
-    ? `（メンバー情報: ${memberNames.join("、")}。聞かれたら名前を教えてOK。自分からは出さない）`
+    ? `（メンバー情報: ${memberNames.join("、")}）`
     : "";
-  const groupContext = getJapanTimeContext() + (memberCount
-    ? `（このグループは${memberCount}人）`
-    : "") + memberContext;
+  const groupContext = getJapanTimeContext() + (memberCount ? `（${memberCount}人）` : "") + memberContext;
 
-  // 3. LLM judgment: is this directed at bot? does it need intervention? is it complex?
-  let isDirectedAtBot = false;
-  let needsIntervention = false;
-  let isComplex = false;
+  // ── Layer 1: Unified LLM judgment (gpt-5.4-mini, 1 call) ──
+  const { judgeGroupMessage, shouldIntervene } = await import("../moderation/judge");
+  const judgment = mentioned
+    ? { action: "respond" as const, severity: "low" as const, reason: "名前を呼ばれた" }
+    : await judgeGroupMessage(recentMessages, event.text, groupContext, relationshipCtx);
 
-  // Rule-based intervention trigger: strong emotional keywords force intervention
-  const strongEmotionKeywords = /不快|受け入れられ|許せ|信じられ|いい加減にし|もう無理|関係.*難し|我慢.*限界|裏切|見損な|最低|ふざけ|ありえ|頭にく|腹が立|もう終わり|縁を切/;
-  if (strongEmotionKeywords.test(event.text) && event.text.length > 30) {
-    needsIntervention = true;
-    isComplex = true;
-    console.log("Rule-based intervention triggered:", event.text.slice(0, 50));
-  }
+  // Save message
+  const conflictScore = judgment.action === "intervene" ? (judgment.severity === "high" ? 90 : judgment.severity === "medium" ? 60 : 30) : 0;
+  const intentResult = await detectIntent(textForProcessing);
+  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, conflictScore);
 
-  if (!mentioned) {
-    const lastBotMsg = await prisma.message.findFirst({
-      where: { conversationId: conversation.id, senderRole: "bot" },
-      orderBy: { timestamp: "desc" },
-    });
-    const botContext = lastBotMsg
-      ? `うめこの直前の発言（${Math.round((event.timestamp.getTime() - lastBotMsg.timestamp.getTime()) / 60000)}分前）: ${lastBotMsg.text}`
-      : "うめこはまだこの会話で発言していない";
-
-    const judgment = await chatCompletionJson<{ directed: boolean; intervention: boolean; complex: boolean }>(
-      `あなたはLINEグループにいる「うめこ」です。以下を判定してJSON形式で返してください。
-
-directed: このメッセージはうめこに向けられたものか？
-- うめこの発言への返事や反応 → true
-- うめこに話しかけている → true
-- 他の人同士の会話 → false
-
-intervention: うめこが中立的に介入すべきか？
-- 会話がピリッとしてきている、すれ違いが起きている → true
-- 否定的・攻撃的なやりとりが続いている → true
-- たとえ1発言でも、強い怒り・最後通告・関係断絶の示唆・人格否定が含まれている → true
-- 「もう無理」「受け入れられない」「今後は難しい」のような感情的に強い表現 → true
-- 普通の会話、報告、雑談、軽い愚痴 → false
-
-complex: うめこが丁寧に考えて答えるべき内容か？
-- 相談、悩み、人間関係の話、感情的な内容 → true
-- 仲裁や意見の調整が必要 → true
-- 挨拶、雑談、簡単な質問、お礼 → false
-
-{"directed": true/false, "intervention": true/false, "complex": true/false}`,
-      `${botContext}\n\n直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新のメッセージ: ${event.text}`,
-      { purpose: "intent" }
-    );
-    isDirectedAtBot = judgment.directed === true;
-    needsIntervention = needsIntervention || judgment.intervention === true;
-    isComplex = isComplex || judgment.complex === true;
-  } else {
-    // mentioned directly — check complexity from message content
-    isComplex = needsIntervention || event.text.length > 50;
-  }
-
-  const shouldRespond = mentioned || isDirectedAtBot;
-  console.log("GROUP JUDGMENT:", { mentioned, isDirectedAtBot, needsIntervention, isComplex, shouldRespond, textSlice: event.text.slice(0, 50) });
-
-  // 4. Save message
-  const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, needsIntervention ? 60 : 0);
-
-  // 5. Determine if we should respond
   let responseText: string | null = null;
   let triggerType: string | null = null;
 
-  // Respond if mentioned by name or replying to bot's question
-  if (shouldRespond) {
+  if (judgment.action === "respond") {
+    // ── Respond to direct address ──
     switch (intentResult.intent) {
       case "rewrite_request": {
-        const cleanText = textForProcessing
-          .replace(/言い換えて|柔らかくして|やわらかくして|角が立たないように|丁寧にして|書き直して|リライトして/g, "")
-          .trim();
-
+        const cleanText = textForProcessing.replace(/言い換えて|柔らかくして|やわらかくして|角が立たないように|丁寧にして|書き直して|リライトして/g, "").trim();
         if (cleanText.length > 0) {
           responseText = await rewriteMessage(cleanText, "soft", conversation.contextType);
         } else {
-          const prevMessages = await prisma.message.findMany({
-            where: { conversationId: conversation.id, senderRole: "human", id: { not: savedMessage.id } },
-            orderBy: { timestamp: "desc" },
-            take: 1,
-          });
-          if (prevMessages.length > 0) {
-            responseText = await rewriteMessage(prevMessages[0].text, "soft", conversation.contextType);
-          }
+          const prev = await prisma.message.findMany({ where: { conversationId: conversation.id, senderRole: "human", id: { not: savedMessage.id } }, orderBy: { timestamp: "desc" }, take: 1 });
+          if (prev.length > 0) responseText = await rewriteMessage(prev[0].text, "soft", conversation.contextType);
         }
         triggerType = "manual_rewrite";
         break;
       }
-
       case "summarize_request": {
         const { formatted: msgs } = await getRecentMessages(conversation.id, 20);
         responseText = await generateSummary(msgs, "summary");
         triggerType = "manual_summary";
         break;
       }
-
       case "mediation_request": {
-        const { formatted: msgs } = await getRecentMessages(conversation.id);
-        responseText = await generateMediation(msgs, conversation.contextType, "ユーザーからの仲介リクエスト " + groupContext);
+        responseText = await generateMediation(recentMessages, conversation.contextType, groupContext);
         triggerType = "auto_mediation";
         break;
       }
-
       case "search_request": {
         responseText = await webSearchCompletion(
           CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
           `直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
           { purpose: "chat" }
         );
-        if (!responseText) {
-          responseText = "ごめんね、検索がうまくいかなかったみたい。もう一度試してもらえる？";
-        }
+        if (!responseText) responseText = "ごめんね、検索がうまくいかなかったみたい。もう一度試してもらえる？";
         break;
       }
-
       default: {
         const memory = await getConversationMemory(conversation.id);
         const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
-        const chatPurpose = isComplex ? "chat" : "chat_simple";
-        const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
-
-        if (isDirectedAtBot) {
-          const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
-          responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
-            `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
-            { purpose: chatPurpose },
-            { imageUrls: event.imageUrls }
-          );
-        } else {
-          responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
-            textForProcessing,
-            { purpose: chatPurpose },
-            { imageUrls: event.imageUrls }
-          );
-        }
+        const profileCtx = await import("../memory/profile").then(m => m.getUserProfileContext(event.senderId));
+        const imageHint = event.imageUrls?.length ? "\n（画像が送られています。内容もふまえて応答してください）" : "";
+        responseText = await chatCompletion(
+          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${profileCtx}${imageHint}`,
+          `${memoryContext}直近の会話:\n${recentMessages.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
+          { purpose: judgment.severity !== "low" || event.text.length > 50 ? "chat" : "chat_simple" },
+          { imageUrls: event.imageUrls }
+        );
         break;
       }
     }
-  } else if (needsIntervention) {
-    console.log("INTERVENTION TRIGGERED for conversation:", conversation.id, "text:", event.text.slice(0, 50));
-    // LLM judged this needs intervention - check cooldown
-    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
-    const recentInterventions = await prisma.intervention.findMany({
-      where: {
-        conversationId: conversation.id,
-        triggerType: "auto_mediation",
-        createdAt: { gte: thirtyMinAgo },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  } else if (judgment.action === "intervene") {
+    // ── Layer 2: Severity-based cooldown check ──
+    const canIntervene = await shouldIntervene(conversation.id, judgment.severity);
 
-    const interventionCount = recentInterventions.length;
-    const lastIntervention = recentInterventions[0];
-    const cooldownMs = 5 * 60 * 1000;
-    const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
-
-    console.log("INTERVENTION check:", { interventionCount, cooledDown, lastIntervention: lastIntervention?.createdAt });
-    if (interventionCount < 2 && cooledDown) {
-      const stage = interventionCount === 0
-        ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
-        : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
+    if (canIntervene) {
+      // ── Layer 3: Generate intervention (gpt-5.4) ──
+      const stageHint = judgment.severity === "high"
+        ? "（深刻な状況。落ち着いて、でもしっかり受け止める。必要なら「ここは一度、少し時間を置こう」と提案）"
+        : "（軽く受け止める。「大事な話だね」くらいの温度で、論点を整理する）";
       try {
-        responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stage);
+        responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stageHint);
       } catch (err) {
         console.error("generateMediation error:", err instanceof Error ? err.message : err);
-        responseText = "ちょっと待って。大事な話をしてるのは伝わってるよ。少し落ち着いてから、ひとつずつ整理してみない？";
       }
       if (!responseText) {
         responseText = "ちょっと待って。大事な話をしてるのは伝わってるよ。少し落ち着いてから、ひとつずつ整理してみない？";
       }
       triggerType = "auto_mediation";
+
+      // Update group relationship memory in background
+      import("../memory/profile").then(m =>
+        m.updateGroupRelationship(conversation.id, recentMessages, responseText!)
+      ).catch(() => {});
     }
   }
 
-  // 6. Clean, send, and save
+  // ── Send and save ──
   if (responseText) {
     const cleanedResponse = cleanLlmOutput(responseText);
     await sendResponse(adapter, event, cleanedResponse);
 
-    // Save in background
     const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, cleanedResponse)];
     if (triggerType) {
-      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, needsIntervention ? 60 : 0, null, cleanedResponse));
+      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason, cleanedResponse));
     }
     Promise.all(saves).catch((err) => {
       console.warn("Group save failed:", conversation.id, err instanceof Error ? err.message : err);
     });
   }
 
-  // Update summary in background
+  // Update summary + profile in background
   maybeUpdateSummary(conversation.id).catch((err) => {
     console.warn("Group summary update failed:", conversation.id, err instanceof Error ? err.message : err);
   });
