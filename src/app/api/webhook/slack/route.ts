@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { slackAdapter, verifySlackRequest, parseSlackPayload } from "@/lib/channels/slack";
+import { slackAdapter, verifySlackRequest } from "@/lib/channels/slack";
 import { processMessage } from "@/lib/channels/pipeline";
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
+  const body = JSON.parse(rawBody);
+
+  // Handle URL verification challenge (no signature check needed)
+  if (body.type === "url_verification") {
+    return NextResponse.json({ challenge: body.challenge });
+  }
+
+  // Verify Slack signature for all other requests
   const timestamp = request.headers.get("x-slack-request-timestamp") || "";
   const signature = request.headers.get("x-slack-signature") || "";
 
-  // Verify Slack signature
   if (!verifySlackRequest(rawBody, timestamp, signature)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody);
-  const payload = parseSlackPayload(body);
-
-  // Handle URL verification challenge
-  if (payload.type === "url_verification") {
-    return NextResponse.json({ challenge: payload.challenge });
-  }
-
   // Handle events
-  if (payload.type === "event_callback" && payload.event) {
+  if (body.type === "event_callback" && body.event) {
     const events = slackAdapter.normalizeEvents(body);
 
     for (const event of events) {
