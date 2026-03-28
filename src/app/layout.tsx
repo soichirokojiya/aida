@@ -15,16 +15,16 @@ const geistMono = Geist_Mono({
 const BASE_URL = "https://umeko.life";
 
 export const metadata: Metadata = {
-  title: "うめこ｜LINEで使える会話整理AI｜言いづらいことをやわらかく",
+  title: "うめこ｜LINE・Slackで使える会話整理AI｜言いづらいことをやわらかく",
   description:
-    "LINEグループに招待すれば会話を見守り、1対1なら伝え方の相談ができるAI「うめこ」。きつい言い方をやわらかくしたり、すれ違いを整理したり。1ヶ月無料、DMプラン月額490円から。",
+    "LINEグループやSlackチャンネルに招待すれば会話を見守り、1対1なら伝え方の相談ができるAI「うめこ」。きつい言い方をやわらかくしたり、すれ違いを整理したり。1ヶ月無料、月額490円から。",
   metadataBase: new URL(BASE_URL),
   alternates: {
     canonical: "/",
   },
   icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   robots: {
     index: true,
@@ -34,17 +34,17 @@ export const metadata: Metadata = {
     "max-video-preview": -1,
   },
   openGraph: {
-    title: "うめこ｜LINEで使える会話整理AI",
+    title: "うめこ｜LINE・Slackで使える会話整理AI",
     description:
-      "言いづらいことをやわらかく。すれ違いを少しずつ軽く。グループに招待しても、1対1で相談しても。1ヶ月無料。",
+      "言いづらいことをやわらかく。すれ違いを少しずつ軽く。LINEグループやSlackチャンネルに招待しても、1対1で相談しても。1ヶ月無料。",
     url: BASE_URL,
     siteName: "うめこ",
     images: [
       {
-        url: "/umeko-logo.png",
-        width: 1080,
-        height: 1080,
-        alt: "うめこ - 会話をやさしく整理するAI",
+        url: "/ogp.png",
+        width: 1200,
+        height: 630,
+        alt: "うめこ - LINE・Slackで使える会話整理AI",
       },
     ],
     type: "website",
@@ -52,10 +52,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "うめこ｜LINEで使える会話整理AI",
+    title: "うめこ｜LINE・Slackで使える会話整理AI",
     description:
       "言いづらいことをやわらかく。すれ違いを少しずつ軽く。1ヶ月無料。",
-    images: ["/umeko-logo.png"],
+    images: ["/ogp.png"],
   },
   other: {
     "theme-color": "#0D9488",
