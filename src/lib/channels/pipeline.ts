@@ -6,7 +6,7 @@ import { checkSafety, checkSafetyRuleBased, getSafetyResponse } from "../safety/
 import { generateMediation } from "../mediation/generator";
 import { rewriteMessage } from "../rewrite/generator";
 import { generateSummary } from "../summarize/generator";
-import { chatCompletion, chatCompletionJson, transcribeAudio } from "../llm/client";
+import { chatCompletion, chatCompletionJson, transcribeAudio, webSearchCompletion } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
 import { isDmActive, isGroupActive } from "../billing/check";
@@ -45,13 +45,19 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 - 個人的な質問にはキャラとして自然に答える（「AIなので〜」とは絶対言わない）
 
 ## うめこのサービス情報（聞かれたらこの情報だけ正確に答える）
-- パーソナルプラン: 月額490円。1対1でうめこと話せる
-- LINEグループプラン: 月額980円（1LINEグループ）。誰か1人が払えばグループ全員使える
-- パーソナルとLINEグループは独立。片方だけでも使える
-- 無料トライアル: 最初の1ヶ月は無料。全機能使える
-- 解約: うめこに「解約したい」と言えば手続きページのリンクを送る。ブロックだけでは課金は止まらないので、必ず解約手続きが必要
+- うめこ LINE:
+  - パーソナルプラン: 月額490円。1対1でうめこと話せる
+  - LINEグループプラン: 月額980円（1LINEグループ）。誰か1人が払えばグループ全員使える
+  - パーソナルとLINEグループは独立。片方だけでも使える
+- うめこ for Slack:
+  - パーソナルプラン: 月額490円。1対1でうめこと話せる
+  - チャンネルプラン: 月額980円（1Slackチャンネル）。誰か1人が払えばチャンネル全員使える
+  - パーソナルとチャンネルは独立。片方だけでも使える
+- LINE版とSlack版は独立したサービス。料金も別々
+- 無料トライアル: 最初の1ヶ月は無料。全機能使える（LINE・Slackそれぞれ）
+- 解約: うめこに「解約したい」と言えば手続きページのリンクを送る。ブロックやアンインストールだけでは課金は止まらないので、必ず解約手続きが必要
 - 運営への問い合わせ: info@cfac.co.jp に連絡してもらう
-- LINE公式アカウント。サイトは umeko.life
+- サイトは umeko.life
 - 年間プラン、一括払い、法人プランは存在しない
 - 【重要】ここに書いていないプランや料金は存在しない。聞かれたら「今はこのプランだけだよ」と答える
 - 知らないことを聞かれたら「ごめん、それはちょっとわからないな」と正直に答える。絶対に作り話をしない
@@ -411,13 +417,10 @@ async function handleDirectMessage(
     }
 
     case "search_request": {
-      const memory = await getConversationMemory(conversation.id);
-      const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
-      responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。`,
-        `${memoryContext}\n\nユーザー: ${event.text}`,
-        { purpose: "chat" },
-        { webSearch: true }
+      responseText = await webSearchCompletion(
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
+        event.text,
+        { purpose: "chat" }
       );
       break;
     }
@@ -450,12 +453,11 @@ complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹
         : "";
 
       const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
-      const needsSearch = /調べて|検索して|ググって|最新の|今の.*ニュース/i.test(event.text);
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}${needsSearch ? "\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。" : ""}`,
+        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
         { purpose: chatPurpose },
-        { imageUrls: event.imageUrls, webSearch: needsSearch }
+        { imageUrls: event.imageUrls }
       );
       break;
     }
@@ -636,14 +638,10 @@ complex: うめこが丁寧に考えて答えるべき内容か？
       }
 
       case "search_request": {
-        const memory = await getConversationMemory(conversation.id);
-        const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
-        const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
-        responseText = await chatCompletion(
-          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}\nWeb検索が使えます。最新の情報や事実確認が必要な場合は検索してください。`,
-          `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
-          { purpose: "chat" },
-          { webSearch: true }
+        responseText = await webSearchCompletion(
+          CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
+          textForProcessing,
+          { purpose: "chat" }
         );
         break;
       }
@@ -653,15 +651,14 @@ complex: うめこが丁寧に考えて答えるべき内容か？
         const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
         const chatPurpose = isComplex ? "chat" : "chat_simple";
         const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
-        const needsSearch = /調べて|検索して|ググって|最新の|今の.*ニュース/i.test(textForProcessing);
 
         if (isDirectedAtBot) {
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
-            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}${needsSearch ? "\nWeb検索が使えます。" : ""}`,
+            CHAT_SYSTEM_PROMPT + `\n\n${groupContext}${imageHint}`,
             `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
             { purpose: chatPurpose },
-            { imageUrls: event.imageUrls, webSearch: needsSearch }
+            { imageUrls: event.imageUrls }
           );
         } else {
           responseText = await chatCompletion(

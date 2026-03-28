@@ -57,7 +57,7 @@ export async function chatCompletion(
   systemPrompt: string,
   userMessage: string,
   ctx: LlmContext = { purpose: "chat" },
-  options?: { imageUrls?: string[]; webSearch?: boolean }
+  options?: { imageUrls?: string[] }
 ): Promise<string> {
   const model = selectModel(ctx.purpose);
   const start = Date.now();
@@ -109,6 +109,75 @@ export async function transcribeAudio(audioDataUrl: string): Promise<string> {
     console.warn("Audio transcription failed:", err instanceof Error ? err.message : err);
     return "";
   }
+}
+
+// ── Responses API helpers (for features not available in Chat Completions) ──
+
+function extractResponseText(data: { output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> }): string {
+  if (!Array.isArray(data.output)) return "";
+  for (const item of data.output) {
+    if (item.type === "message" && Array.isArray(item.content)) {
+      for (const c of item.content) {
+        if (c.type === "output_text" && c.text) return c.text;
+      }
+    }
+  }
+  return "";
+}
+
+async function responsesApi(body: Record<string, unknown>): Promise<string> {
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) {
+    console.warn("Responses API error:", data.error.message || data.error);
+    return "";
+  }
+  return extractResponseText(data);
+}
+
+// Read file content (PDF, Word, Excel, etc.)
+export async function readFileWithLlm(
+  fileBase64: string,
+  mimeType: string,
+  fileName: string,
+  instruction: string
+): Promise<string> {
+  return responsesApi({
+    model: MODEL_MINI,
+    input: [{
+      role: "user",
+      content: [
+        { type: "input_file", file_data: `data:${mimeType};base64,${fileBase64}`, filename: fileName },
+        { type: "input_text", text: instruction },
+      ],
+    }],
+  });
+}
+
+// Web search via Responses API
+export async function webSearchCompletion(
+  systemPrompt: string,
+  userMessage: string,
+  ctx: LlmContext = { purpose: "chat" }
+): Promise<string> {
+  const model = selectModel(ctx.purpose);
+  const start = Date.now();
+  const text = await responsesApi({
+    model,
+    instructions: systemPrompt,
+    tools: [{ type: "web_search_preview" }],
+    input: userMessage,
+  });
+  const elapsed = Date.now() - start;
+  trackUsage(ctx, model, undefined, elapsed);
+  return text;
 }
 
 export async function chatCompletionJson<T>(
