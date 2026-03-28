@@ -642,6 +642,7 @@ complex: うめこが丁寧に考えて答えるべき内容か？
   }
 
   const shouldRespond = mentioned || isDirectedAtBot;
+  console.log("GROUP JUDGMENT:", { mentioned, isDirectedAtBot, needsIntervention, isComplex, shouldRespond, textSlice: event.text.slice(0, 50) });
 
   // 4. Save message
   const savedMessage = await saveMessage(conversation.id, event, intentResult.intent, needsIntervention ? 60 : 0);
@@ -726,6 +727,7 @@ complex: うめこが丁寧に考えて答えるべき内容か？
       }
     }
   } else if (needsIntervention) {
+    console.log("INTERVENTION TRIGGERED for conversation:", conversation.id, "text:", event.text.slice(0, 50));
     // LLM judged this needs intervention - check cooldown
     const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
     const recentInterventions = await prisma.intervention.findMany({
@@ -742,6 +744,7 @@ complex: うめこが丁寧に考えて答えるべき内容か？
     const cooldownMs = 5 * 60 * 1000;
     const cooledDown = !lastIntervention || (Date.now() - lastIntervention.createdAt.getTime() > cooldownMs);
 
+    console.log("INTERVENTION check:", { interventionCount, cooledDown, lastIntervention: lastIntervention?.createdAt });
     if (interventionCount < 2 && cooledDown) {
       const stage = interventionCount === 0
         ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
