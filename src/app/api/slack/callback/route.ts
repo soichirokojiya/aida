@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
     const data = await res.json();
 
     if (!data.ok) {
-      console.error("Slack OAuth exchange failed:", data.error);
-      return NextResponse.redirect(`${baseUrl}?slack=error`);
+      console.error("Slack OAuth exchange failed:", data.error, data);
+      return NextResponse.redirect(`${baseUrl}?slack=error&reason=${encodeURIComponent(data.error || "unknown")}`);
     }
 
     // Save workspace to DB
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}?slack=success`);
   } catch (err) {
     console.error("Slack OAuth callback error:", err);
-    return NextResponse.redirect(`${baseUrl}?slack=error`);
+    const msg = err instanceof Error ? err.message : "unknown";
+    return NextResponse.redirect(`${baseUrl}?slack=error&reason=${encodeURIComponent(msg)}`);
   }
 }
