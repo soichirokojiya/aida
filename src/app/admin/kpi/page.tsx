@@ -14,6 +14,11 @@ export default async function KpiPage() {
   const trialUsers = await prisma.lineUser.count({ where: { trialEndsAt: { gt: now } } });
   const blockedUsers = await prisma.lineUser.count({ where: { unfollowedAt: { not: null } } });
 
+  // --- Slackユーザー数 ---
+  const totalSlackUsers = await prisma.slackUser.count();
+  const slackTrialUsers = await prisma.slackUser.count({ where: { trialEndsAt: { gt: now } } });
+  const slackWorkspaces = await prisma.slackWorkspace.count();
+
   // --- サブスクリプション ---
   const activeDmSubs = await prisma.dmSubscription.count({ where: { status: "active" } });
   const canceledDmSubs = await prisma.dmSubscription.count({ where: { status: "canceled" } });
@@ -37,10 +42,19 @@ export default async function KpiPage() {
   const groupBase = activeGroupSubs + churnedGroup;
   const groupChurnRate = groupBase > 0 ? Math.round((churnedGroup / groupBase) * 100) : 0;
 
-  // --- DAU / WAU / MAU ---
-  const dau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: today } } });
-  const wau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: sevenDaysAgo } } });
-  const mau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: thirtyDaysAgo } } });
+  // --- DAU / WAU / MAU (LINE) ---
+  const lineDau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: today } } });
+  const lineWau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: sevenDaysAgo } } });
+  const lineMau = await prisma.lineUser.count({ where: { lastActiveAt: { gte: thirtyDaysAgo } } });
+
+  // --- DAU / WAU / MAU (Slack) ---
+  const slackDau = await prisma.slackUser.count({ where: { lastActiveAt: { gte: today } } });
+  const slackWau = await prisma.slackUser.count({ where: { lastActiveAt: { gte: sevenDaysAgo } } });
+  const slackMau = await prisma.slackUser.count({ where: { lastActiveAt: { gte: thirtyDaysAgo } } });
+
+  const dau = lineDau + slackDau;
+  const wau = lineWau + slackWau;
+  const mau = lineMau + slackMau;
 
   // --- メッセージ数 ---
   const totalMessages = await prisma.message.count();
@@ -52,11 +66,17 @@ export default async function KpiPage() {
   const monthInterventions = await prisma.intervention.count({ where: { createdAt: { gte: thirtyDaysAgo } } });
 
   // --- グループ・DM数 ---
-  const totalGroups = await prisma.conversation.count({
+  const lineGroups = await prisma.conversation.count({
     where: { channelType: "line", externalThreadId: { not: { startsWith: "U" } } },
   });
-  const dmCount = await prisma.conversation.count({
+  const lineDms = await prisma.conversation.count({
     where: { channelType: "line", externalThreadId: { startsWith: "U" } },
+  });
+  const slackChannels = await prisma.conversation.count({
+    where: { channelType: "slack", externalThreadId: { not: { startsWith: "D" } } },
+  });
+  const slackDms = await prisma.conversation.count({
+    where: { channelType: "slack", externalThreadId: { startsWith: "D" } },
   });
 
   // --- APIコスト ---
@@ -101,8 +121,8 @@ export default async function KpiPage() {
         <Card label="粗利率" value={totalMrr > 0 ? `${Math.round(((totalMrr - monthCostJpy) / totalMrr) * 100)}%` : "-"} />
       </Section>
 
-      <Section title="ユーザー">
-        <Card label="総ユーザー" value={totalUsers} />
+      <Section title="ユーザー（LINE）">
+        <Card label="LINEユーザー" value={totalUsers} />
         <Card label="トライアル中" value={trialUsers} />
         <Card label="ブロック" value={blockedUsers} />
         <Card label="DMチャーン率" value={`${dmChurnRate}%`} sub="過去30日" />
@@ -111,10 +131,16 @@ export default async function KpiPage() {
         <Card label="グループ解約数" value={canceledGroupSubs} />
       </Section>
 
-      <Section title="アクティブユーザー">
-        <Card label="DAU（今日）" value={dau} />
-        <Card label="WAU（7日）" value={wau} />
-        <Card label="MAU（30日）" value={mau} />
+      <Section title="ユーザー（Slack）">
+        <Card label="Slackワークスペース" value={slackWorkspaces} />
+        <Card label="Slackユーザー" value={totalSlackUsers} />
+        <Card label="Slackトライアル中" value={slackTrialUsers} />
+      </Section>
+
+      <Section title="アクティブユーザー（合計）">
+        <Card label="DAU（今日）" value={dau} sub={`LINE ${lineDau} / Slack ${slackDau}`} />
+        <Card label="WAU（7日）" value={wau} sub={`LINE ${lineWau} / Slack ${slackWau}`} />
+        <Card label="MAU（30日）" value={mau} sub={`LINE ${lineMau} / Slack ${slackMau}`} />
         <Card label="DAU/MAU" value={mau > 0 ? `${Math.round((dau / mau) * 100)}%` : "-"} sub="スティッキネス" />
       </Section>
 
@@ -123,8 +149,10 @@ export default async function KpiPage() {
         <Card label="月間メッセージ" value={monthMessages.toLocaleString()} />
         <Card label="累計メッセージ" value={totalMessages.toLocaleString()} />
         <Card label="月間介入数" value={monthInterventions} />
-        <Card label="グループ数" value={totalGroups} />
-        <Card label="DM数" value={dmCount} />
+        <Card label="LINEグループ" value={lineGroups} />
+        <Card label="LINE DM" value={lineDms} />
+        <Card label="Slackチャンネル" value={slackChannels} />
+        <Card label="Slack DM" value={slackDms} />
       </Section>
 
       <Section title="コスト">

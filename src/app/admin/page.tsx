@@ -37,6 +37,7 @@ export default async function ConversationsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>スレッドID</TableHead>
+            <TableHead>チャンネル</TableHead>
             <TableHead>種別</TableHead>
             <TableHead>人数</TableHead>
             <TableHead>契約</TableHead>
@@ -61,6 +62,11 @@ export default async function ConversationsPage() {
                   >
                     {conv.externalThreadId}
                   </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={conv.channelType === "slack" ? "border-purple-300 text-purple-700" : "border-green-300 text-green-700"}>
+                    {conv.channelType === "slack" ? "Slack" : "LINE"}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{isGroup ? "グループ" : "DM"}</Badge>
@@ -88,7 +94,7 @@ export default async function ConversationsPage() {
           })}
           {conversations.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={9} className="text-center text-gray-400 py-8">
                 まだ会話がありません
               </TableCell>
             </TableRow>

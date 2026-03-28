@@ -20,6 +20,9 @@ export default function AdminLayout({
         <Link href="/admin/users" className="text-sm text-gray-600 hover:text-gray-900">
           ユーザー
         </Link>
+        <Link href="/admin/slack" className="text-sm text-gray-600 hover:text-gray-900">
+          Slack
+        </Link>
         <Link href="/admin/usage" className="text-sm text-gray-600 hover:text-gray-900">
           API使用量
         </Link>

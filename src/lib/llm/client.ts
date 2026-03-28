@@ -10,7 +10,18 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const MODEL_MINI = process.env.OPENAI_MODEL_MINI || "gpt-4o-mini";
+const MODEL_FULL = process.env.OPENAI_MODEL_FULL || "gpt-5.4";
+
+// Purposes that require deeper reasoning → full model
+const FULL_MODEL_PURPOSES = new Set([
+  "mediation",  // 仲裁・介入
+  "chat",       // DM相談・グループ応答
+]);
+
+function selectModel(purpose: string): string {
+  return FULL_MODEL_PURPOSES.has(purpose) ? MODEL_FULL : MODEL_MINI;
+}
 
 interface LlmContext {
   purpose: string;
@@ -20,6 +31,7 @@ interface LlmContext {
 
 async function trackUsage(
   ctx: LlmContext,
+  model: string,
   usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined,
   responseTimeMs: number
 ) {
@@ -29,7 +41,7 @@ async function trackUsage(
         conversationId: ctx.conversationId,
         messageId: ctx.messageId,
         purpose: ctx.purpose,
-        model: MODEL,
+        model,
         inputTokens: usage?.prompt_tokens ?? 0,
         outputTokens: usage?.completion_tokens ?? 0,
         totalTokens: usage?.total_tokens ?? 0,
@@ -46,9 +58,10 @@ export async function chatCompletion(
   userMessage: string,
   ctx: LlmContext = { purpose: "chat" }
 ): Promise<string> {
+  const model = selectModel(ctx.purpose);
   const start = Date.now();
   const response = await getOpenAI().chat.completions.create({
-    model: MODEL,
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -57,7 +70,7 @@ export async function chatCompletion(
     max_tokens: 1024,
   });
   const elapsed = Date.now() - start;
-  trackUsage(ctx, response.usage ?? undefined, elapsed);
+  trackUsage(ctx, model, response.usage ?? undefined, elapsed);
   return response.choices[0]?.message?.content || "";
 }
 
@@ -66,9 +79,10 @@ export async function chatCompletionJson<T>(
   userMessage: string,
   ctx: LlmContext = { purpose: "chat" }
 ): Promise<T> {
+  const model = selectModel(ctx.purpose);
   const start = Date.now();
   const response = await getOpenAI().chat.completions.create({
-    model: MODEL,
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -78,7 +92,7 @@ export async function chatCompletionJson<T>(
     response_format: { type: "json_object" },
   });
   const elapsed = Date.now() - start;
-  trackUsage(ctx, response.usage ?? undefined, elapsed);
+  trackUsage(ctx, model, response.usage ?? undefined, elapsed);
   const content = response.choices[0]?.message?.content || "{}";
   return JSON.parse(content) as T;
 }

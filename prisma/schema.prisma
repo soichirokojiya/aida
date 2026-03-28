@@ -157,3 +157,51 @@ model GroupMembership {
   @@index([lineUserId])
   @@index([groupId])
 }
+
+model SlackWorkspace {
+  id                String   @id @default(cuid())
+  teamId            String   @unique
+  teamName          String
+  botToken          String
+  botUserId         String?
+  installedByUserId String?
+  installedByName   String?
+  signingSecret     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  users SlackUser[]
+
+  @@index([teamId])
+}
+
+model SlackUser {
+  id              String    @id @default(cuid())
+  slackUserId     String
+  teamId          String
+  displayName     String?
+  linkedLineUserId String?
+  trialEndsAt     DateTime
+  lastActiveAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace SlackWorkspace @relation(fields: [teamId], references: [teamId])
+
+  @@unique([slackUserId, teamId])
+  @@index([teamId])
+  @@index([trialEndsAt])
+  @@index([linkedLineUserId])
+}
+
+model LinkCode {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  lineUserId    String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([code])
+  @@index([lineUserId])
+}

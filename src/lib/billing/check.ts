@@ -67,21 +67,39 @@ export async function isDmActive(lineUserId: string): Promise<boolean> {
 }
 
 // Check if group is active
-export async function isGroupActive(groupId: string): Promise<boolean> {
-  // Check if any member in this group is in trial
-  const trialMembers = await prisma.groupMembership.findMany({
+// senderId is optional — when provided, also directly check the sender's trial/subscription
+export async function isGroupActive(groupId: string, senderId?: string): Promise<boolean> {
+  // 1. Direct check: is the current sender in trial or paid?
+  //    This avoids dependency on GroupMembership being populated first.
+  if (senderId) {
+    const sender = await prisma.lineUser.findUnique({
+      where: { lineUserId: senderId },
+      include: { dmSubscription: true },
+    });
+    if (sender) {
+      if (sender.trialEndsAt > new Date()) return true;
+      if (sender.dmSubscription?.status === "active") return true;
+    }
+  }
+
+  // 2. Check if any other registered member in this group is in trial or paid
+  const members = await prisma.groupMembership.findMany({
     where: { groupId },
     select: { lineUserId: true },
   });
 
-  for (const member of trialMembers) {
+  for (const member of members) {
+    if (member.lineUserId === senderId) continue; // Already checked above
     const user = await prisma.lineUser.findUnique({
       where: { lineUserId: member.lineUserId },
+      include: { dmSubscription: true },
     });
-    if (user && user.trialEndsAt > new Date()) return true;
+    if (!user) continue;
+    if (user.trialEndsAt > new Date()) return true;
+    if (user.dmSubscription?.status === "active") return true;
   }
 
-  // Check group subscription
+  // 3. Check group subscription
   const groupSub = await prisma.groupSubscription.findUnique({
     where: { groupId },
   });

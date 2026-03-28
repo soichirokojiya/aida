@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { slackAdapter, verifySlackRequest } from "@/lib/channels/slack";
+import { createSlackAdapter, verifySlackRequest, trackSlackUser, getBotUserIdForTeam } from "@/lib/channels/slack";
 import { processMessage } from "@/lib/channels/pipeline";
 
 export async function POST(request: NextRequest) {
@@ -7,7 +7,6 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     const body = JSON.parse(rawBody);
 
-    // Log incoming payload type
     console.log("Slack webhook received:", body.type, body.event?.type || "no event");
 
     // Handle URL verification challenge
@@ -26,13 +25,14 @@ export async function POST(request: NextRequest) {
 
     // Ignore retry requests from Slack
     if (request.headers.get("x-slack-retry-num")) {
-      console.log("Slack: ignoring retry");
       return NextResponse.json({ ok: true });
     }
 
     // Handle events
     if (body.type === "event_callback" && body.event) {
-      console.log("Slack event detail:", JSON.stringify({
+      const teamId = body.team_id || "__legacy__";
+
+      console.log("Slack event:", JSON.stringify({
         type: body.event.type,
         user: body.event.user,
         bot_id: body.event.bot_id,
@@ -40,21 +40,32 @@ export async function POST(request: NextRequest) {
         text: body.event.text?.slice(0, 50),
         channel: body.event.channel,
         channel_type: body.event.channel_type,
+        team_id: teamId,
       }));
 
-      // bot/subtype filtering is handled inside normalizeEvents
+      // Skip messages from our own bot
+      if (body.event.bot_id) {
+        return NextResponse.json({ ok: true });
+      }
+      const botUserId = await getBotUserIdForTeam(teamId);
+      if (botUserId && body.event.user === botUserId) {
+        return NextResponse.json({ ok: true });
+      }
 
-      const events = slackAdapter.normalizeEvents(body);
-      console.log("Slack: normalized", events.length, "events");
+      const adapter = createSlackAdapter(teamId);
+      const events = adapter.normalizeEvents(body);
 
       for (const event of events) {
         const start = Date.now();
         try {
-          console.log(`Slack: Processing ${event.isDirectMessage ? "DM" : "Channel"} text="${event.text.slice(0, 30)}"`);
-          await processMessage(event, slackAdapter);
-          console.log(`Slack: Done ${Date.now() - start}ms`);
+          // Track Slack user (non-blocking)
+          trackSlackUser(event.senderId, teamId).catch(() => {});
+
+          console.log(`Slack[${teamId}]: Processing ${event.isDirectMessage ? "DM" : "Channel"} text="${event.text.slice(0, 30)}"`);
+          await processMessage(event, adapter);
+          console.log(`Slack[${teamId}]: Done ${Date.now() - start}ms`);
         } catch (err) {
-          console.error(`Slack: Error after ${Date.now() - start}ms:`, err instanceof Error ? err.message : err);
+          console.error(`Slack[${teamId}]: Error after ${Date.now() - start}ms:`, err instanceof Error ? err.message : err);
         }
       }
     }
@@ -63,7 +74,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Slack webhook error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { error: "Internal Server Error", detail: error instanceof Error ? error.message : String(error) },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

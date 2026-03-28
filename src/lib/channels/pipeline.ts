@@ -12,6 +12,7 @@ import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } fr
 import { isDmActive, isGroupActive } from "../billing/check";
 import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages";
 import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
+import { redeemLinkCode, isSlackUserActive, isSlackChannelActive } from "../billing/link";
 import { getConversationMemory, maybeUpdateSummary } from "../memory/summary";
 
 const BOT_NAME = "うめこ";
@@ -276,25 +277,27 @@ async function saveBotMessage(conversationId: string, text: string) {
   });
 }
 
-async function sendResponse(
-  adapter: ChannelAdapter,
-  event: NormalizedMessageEvent,
-  text: string
-) {
-  // Clean up LLM output
+function cleanLlmOutput(text: string): string {
   let cleaned = text.replace(/^うめこ[:：]\s*/i, "");
 
   // Remove trailing questions from longer responses (gpt-4o-mini tends to add them)
   // Keep if the whole message is a question (short, single sentence)
   const sentences = cleaned.split(/(?<=[。？！\n])/);
   if (sentences.length >= 2) {
-    // Check if last sentence is a question
     const last = sentences[sentences.length - 1].trim();
     if (last.endsWith("？") || last.endsWith("?")) {
-      // Remove the trailing question
       cleaned = sentences.slice(0, -1).join("").trim();
     }
   }
+  return cleaned;
+}
+
+async function sendResponse(
+  adapter: ChannelAdapter,
+  event: NormalizedMessageEvent,
+  text: string
+) {
+  const cleaned = cleanLlmOutput(text);
   if (event.replyToken) {
     await adapter.sendReply(event.replyToken, cleaned);
   } else {
@@ -427,17 +430,22 @@ async function handleDirectMessage(
   }
 
   // Update summary in background (non-blocking)
-  maybeUpdateSummary(conversation.id).catch(() => {});
+  maybeUpdateSummary(conversation.id).catch((err) => {
+    console.warn("DM summary update failed:", conversation.id, err instanceof Error ? err.message : err);
+  });
 
-  // Send response first, save to DB after (non-blocking)
-  await sendResponse(adapter, event, responseText);
+  // Clean before sending and saving
+  const cleanedResponse = cleanLlmOutput(responseText);
+  await sendResponse(adapter, event, cleanedResponse);
 
   // Save in background
-  const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, responseText)];
+  const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, cleanedResponse)];
   if (triggerType) {
-    saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, responseText));
+    saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, 0, null, cleanedResponse));
   }
-  Promise.all(saves).catch(() => {});
+  Promise.all(saves).catch((err) => {
+    console.warn("DM save failed:", conversation.id, err instanceof Error ? err.message : err);
+  });
 
   } catch (err) {
     console.error("DM handler error:", err instanceof Error ? err.stack : err);
@@ -504,9 +512,10 @@ async function handleGroupMessage(
     ? `（このグループは${memberCount}人）`
     : "") + memberContext;
 
-  // 3. LLM judgment: is this directed at bot? does it need intervention?
+  // 3. LLM judgment: is this directed at bot? does it need intervention? is it complex?
   let isDirectedAtBot = false;
   let needsIntervention = false;
+  let isComplex = false;
   if (!mentioned) {
     const lastBotMsg = await prisma.message.findFirst({
       where: { conversationId: conversation.id, senderRole: "bot" },
@@ -516,7 +525,7 @@ async function handleGroupMessage(
       ? `うめこの直前の発言（${Math.round((event.timestamp.getTime() - lastBotMsg.timestamp.getTime()) / 60000)}分前）: ${lastBotMsg.text}`
       : "うめこはまだこの会話で発言していない";
 
-    const judgment = await chatCompletionJson<{ directed: boolean; intervention: boolean }>(
+    const judgment = await chatCompletionJson<{ directed: boolean; intervention: boolean; complex: boolean }>(
       `あなたはLINEグループにいる「うめこ」です。以下を判定してJSON形式で返してください。
 
 directed: このメッセージはうめこに向けられたものか？
@@ -529,12 +538,21 @@ intervention: うめこが中立的に介入すべき空気か？
 - 否定的・攻撃的なやりとりが続いている → true
 - 普通の会話、報告、雑談 → false
 
-{"directed": true/false, "intervention": true/false}`,
+complex: うめこが丁寧に考えて答えるべき内容か？
+- 相談、悩み、人間関係の話、感情的な内容 → true
+- 仲裁や意見の調整が必要 → true
+- 挨拶、雑談、簡単な質問、お礼 → false
+
+{"directed": true/false, "intervention": true/false, "complex": true/false}`,
       `${botContext}\n\n直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新のメッセージ: ${event.text}`,
       { purpose: "intent" }
     );
     isDirectedAtBot = judgment.directed === true;
     needsIntervention = judgment.intervention === true;
+    isComplex = judgment.complex === true;
+  } else {
+    // mentioned directly — check complexity from message content
+    isComplex = needsIntervention || event.text.length > 50;
   }
 
   const shouldRespond = mentioned || isDirectedAtBot;
@@ -587,17 +605,20 @@ intervention: うめこが中立的に介入すべき空気か？
       default: {
         const memory = await getConversationMemory(conversation.id);
         const memoryContext = memory ? `\nこれまでの会話の要約:\n${memory}\n` : "";
+        const chatPurpose = isComplex ? "chat" : "chat_simple";
 
         if (isDirectedAtBot) {
           const { formatted: msgs } = await getRecentMessages(conversation.id, 5);
           responseText = await chatCompletion(
             CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-            `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`
+            `${memoryContext}直近の会話:\n${msgs.join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
+            { purpose: chatPurpose }
           );
         } else {
           responseText = await chatCompletion(
             CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-            textForProcessing
+            textForProcessing,
+            { purpose: chatPurpose }
           );
         }
         break;
@@ -629,70 +650,34 @@ intervention: うめこが中立的に介入すべき空気か？
     }
   }
 
-  // 6. Send response first, save after
+  // 6. Clean, send, and save
   if (responseText) {
-    await sendResponse(adapter, event, responseText);
+    const cleanedResponse = cleanLlmOutput(responseText);
+    await sendResponse(adapter, event, cleanedResponse);
 
     // Save in background
-    const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, responseText)];
+    const saves: Promise<unknown>[] = [saveBotMessage(conversation.id, cleanedResponse)];
     if (triggerType) {
-      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, needsIntervention ? 60 : 0, null, responseText));
+      saves.push(saveIntervention(conversation.id, savedMessage.id, triggerType, needsIntervention ? 60 : 0, null, cleanedResponse));
     }
-    Promise.all(saves).catch(() => {});
+    Promise.all(saves).catch((err) => {
+      console.warn("Group save failed:", conversation.id, err instanceof Error ? err.message : err);
+    });
   }
 
   // Update summary in background
-  maybeUpdateSummary(conversation.id).catch(() => {});
+  maybeUpdateSummary(conversation.id).catch((err) => {
+    console.warn("Group summary update failed:", conversation.id, err instanceof Error ? err.message : err);
+  });
 }
 
 export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
-  // Check billing status (LINE only for now, Slack is free during beta)
-  if (event.channelType !== "line") {
-    // Skip billing for non-LINE channels
-  } else if (event.isDirectMessage) {
-    const active = await isDmActive(event.senderId);
-    if (!active) {
-      try {
-        const url = await createDmCheckoutUrl(event.senderId);
-        await sendResponse(adapter, event, getDmExpiredMessage(url));
-      } catch {
-        await sendResponse(adapter, event, "おためし期間が終了しています。DMプラン（月額¥490）への登録をお願いします。");
-      }
-      return;
-    }
-  } else {
-    const active = await isGroupActive(event.externalThreadId);
-    if (!active) {
-      // Only show payment message if someone calls うめこ
-      const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
-      if (mentioned) {
-        try {
-          const url = await createGroupCheckoutUrl(event.senderId, event.externalThreadId);
-          await sendResponse(adapter, event, getGroupExpiredMessage(url));
-        } catch {
-          await sendResponse(adapter, event, "このグループではまだうめこが有効になっていません。グループ利用権（月額¥980）への登録をお願いします。");
-        }
-        return;
-      }
-      // Not mentioned and group not active → silently ignore
-      // Still save message for tracking
-      const conversation = await getOrCreateConversation(event);
-      await saveMessage(conversation.id, event, "normal", 0);
-      return;
-    }
-  }
-
-  // Track last active + group membership (non-blocking)
-  prisma.lineUser.updateMany({
-    where: { lineUserId: event.senderId },
-    data: { lastActiveAt: new Date() },
-  }).catch(() => {});
-
-  if (!event.isDirectMessage && event.senderId !== "unknown") {
-    prisma.groupMembership.upsert({
+  // Register group membership BEFORE billing check (so isGroupActive can find this member)
+  if (event.channelType === "line" && !event.isDirectMessage && event.senderId !== "unknown") {
+    await prisma.groupMembership.upsert({
       where: {
         lineUserId_groupId: {
           lineUserId: event.senderId,
@@ -704,8 +689,109 @@ export async function processMessage(
         lineUserId: event.senderId,
         groupId: event.externalThreadId,
       },
-    }).catch(() => {});
+    }).catch((err) => {
+      console.warn("GroupMembership upsert failed:", event.senderId, event.externalThreadId, err instanceof Error ? err.message : err);
+    });
   }
+
+  // Check billing status
+  if (event.channelType === "line") {
+    if (event.isDirectMessage) {
+      // Handle "Slack連携" request from LINE DM
+      if (event.text.match(/slack連携|Slack連携|スラック連携/i)) {
+        const { createLinkCode } = await import("../billing/link");
+        const code = await createLinkCode(event.senderId);
+        await sendResponse(adapter, event, `Slack連携コードを発行したよ！\n\n連携コード: ${code}\n\nSlackでうめこに「${code}」とDMで送ってね。\n（10分間有効）`);
+        return;
+      }
+
+      const active = await isDmActive(event.senderId);
+      if (!active) {
+        try {
+          const url = await createDmCheckoutUrl(event.senderId);
+          await sendResponse(adapter, event, getDmExpiredMessage(url));
+        } catch {
+          await sendResponse(adapter, event, "おためし期間が終了しています。DMプラン（月額¥490）への登録をお願いします。");
+        }
+        return;
+      }
+    } else {
+      const active = await isGroupActive(event.externalThreadId, event.senderId);
+      if (!active) {
+        const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
+        if (mentioned) {
+          try {
+            const url = await createGroupCheckoutUrl(event.senderId, event.externalThreadId);
+            await sendResponse(adapter, event, getGroupExpiredMessage(url));
+          } catch {
+            await sendResponse(adapter, event, "このグループではまだうめこが有効になっていません。グループ利用権（月額¥980）への登録をお願いします。");
+          }
+          return;
+        }
+        const conversation = await getOrCreateConversation(event);
+        await saveMessage(conversation.id, event, "normal", 0);
+        return;
+      }
+    }
+  } else if (event.channelType === "slack") {
+    // Extract teamId from rawEvent
+    const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
+
+    // Check if this is a link code in Slack DM
+    if (event.isDirectMessage && /^[A-Z0-9]{6}$/.test(event.text.trim())) {
+      const result = await redeemLinkCode(event.text.trim(), event.senderId, teamId);
+      await sendResponse(adapter, event, result.message);
+      return;
+    }
+
+    // Check if Slack user is linked to a paid LINE account
+    if (event.isDirectMessage) {
+      const active = await isSlackUserActive(event.senderId, teamId);
+      if (!active) {
+        await sendResponse(adapter, event,
+          "Slackでうめこを使うには、LINEの有料会員との連携が必要だよ。\n\n" +
+          "1. LINEでうめこに「Slack連携」と送る\n" +
+          "2. 届いた6桁のコードをここに送る\n\n" +
+          "まだLINEで登録してない場合は、こちらから → https://lin.ee/nHtneAR"
+        );
+        return;
+      }
+    } else {
+      const active = await isSlackChannelActive(event.externalThreadId);
+      if (!active) {
+        const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
+        if (mentioned) {
+          await sendResponse(adapter, event,
+            "このチャンネルでうめこを使うには、誰か1人がLINEの有料会員と連携してね。\n\n" +
+            "1. LINEでうめこに「Slack連携」と送る\n" +
+            "2. 届いた6桁のコードをうめこにDMで送る"
+          );
+          return;
+        }
+        const conversation = await getOrCreateConversation(event);
+        await saveMessage(conversation.id, event, "normal", 0);
+        return;
+      }
+    }
+  }
+
+  // Track last active (non-blocking)
+  if (event.channelType === "line") {
+    prisma.lineUser.updateMany({
+      where: { lineUserId: event.senderId },
+      data: { lastActiveAt: new Date() },
+    }).catch((err) => {
+      console.warn("LineUser lastActive update failed:", event.senderId, err instanceof Error ? err.message : err);
+    });
+  } else if (event.channelType === "slack") {
+    prisma.slackUser.updateMany({
+      where: { slackUserId: event.senderId },
+      data: { lastActiveAt: new Date() },
+    }).catch((err) => {
+      console.warn("SlackUser lastActive update failed:", event.senderId, err instanceof Error ? err.message : err);
+    });
+  }
+
 
   const conversation = await getOrCreateConversation(event);
 

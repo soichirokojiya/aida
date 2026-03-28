@@ -24,11 +24,11 @@ ${dmCheckoutUrl}`;
 }
 
 export function getGroupExpiredMessage(groupCheckoutUrl: string): string {
-  return `このLINEグループではまだうめこが使えない状態なんだ。
+  return `このグループではまだうめこが使えない状態なんだ。
 
 誰か1人が登録してくれれば、グループのみんなが使えるようになるよ。
 
-▼ LINEグループプラン（月額980円）
+▼ グループプラン（月額980円）
 ${groupCheckoutUrl}`;
 }
 
