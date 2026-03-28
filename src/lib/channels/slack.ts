@@ -69,8 +69,15 @@ export const slackAdapter: ChannelAdapter = {
 
   normalizeEvents(body: unknown): NormalizedMessageEvent[] {
     const payload = body as SlackEventPayload;
-    if (!payload.event || payload.event.type !== "message" && payload.event.type !== "app_mention") return [];
-    if (payload.event.bot_id || payload.event.subtype) return []; // Ignore bot messages
+    const eventType = payload.event?.type;
+    if (!payload.event || (eventType !== "message" && eventType !== "app_mention")) {
+      console.log("Slack normalize: skipped, event type:", eventType);
+      return [];
+    }
+    if (payload.event.bot_id || payload.event.subtype) {
+      console.log("Slack normalize: skipped bot/subtype");
+      return [];
+    }
 
     const event = payload.event;
     const isDm = event.channel_type === "im";

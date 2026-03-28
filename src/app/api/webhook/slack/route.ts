@@ -32,8 +32,18 @@ export async function POST(request: NextRequest) {
 
     // Handle events
     if (body.type === "event_callback" && body.event) {
-      // Ignore bot messages
-      if (body.event.bot_id || body.event.subtype) {
+      console.log("Slack event detail:", JSON.stringify({
+        type: body.event.type,
+        user: body.event.user,
+        bot_id: body.event.bot_id,
+        subtype: body.event.subtype,
+        text: body.event.text?.slice(0, 50),
+        channel: body.event.channel,
+        channel_type: body.event.channel_type,
+      }));
+
+      // Ignore bot messages (but not app_mention from users)
+      if ((body.event.bot_id || body.event.subtype) && body.event.type !== "app_mention") {
         console.log("Slack: ignoring bot/subtype message");
         return NextResponse.json({ ok: true });
       }
