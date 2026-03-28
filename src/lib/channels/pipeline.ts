@@ -331,9 +331,10 @@ async function handleDirectMessage(
     return;
   }
 
-  // 2. Check for cancellation/contract management request
+  // 2. Check for cancellation/contract management request (skip for file/image/audio content)
+  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:");
   const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
-  if (cancelKeywords.test(event.text)) {
+  if (!isMediaMessage && cancelKeywords.test(event.text)) {
     const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
     const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
 
@@ -493,9 +494,10 @@ async function handleGroupMessage(
     return;
   }
 
-  // 2. Check for cancellation request in group
+  // 2. Check for cancellation request in group (skip for file/image/audio content)
+  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:");
   const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
-  if (cancelKeywords.test(event.text)) {
+  if (!isMediaMessage && cancelKeywords.test(event.text)) {
     const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
     const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
 
