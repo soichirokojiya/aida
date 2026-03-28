@@ -649,8 +649,10 @@ export async function processMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter
 ): Promise<void> {
-  // Check billing status
-  if (event.isDirectMessage) {
+  // Check billing status (LINE only for now, Slack is free during beta)
+  if (event.channelType !== "line") {
+    // Skip billing for non-LINE channels
+  } else if (event.isDirectMessage) {
     const active = await isDmActive(event.senderId);
     if (!active) {
       try {
