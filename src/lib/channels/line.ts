@@ -224,6 +224,44 @@ async function enrichLineEvent(event: NormalizedMessageEvent): Promise<Normalize
         console.warn("PDF fetch failed:", err instanceof Error ? err.message : err);
         event.text = `[PDF: ${fileName}（取得に失敗しました）]`;
       }
+    } else if (fileName.toLowerCase().endsWith(".xlsx") || fileName.toLowerCase().endsWith(".xls") || fileName.toLowerCase().endsWith(".csv")) {
+      try {
+        const res = await fetch(
+          `https://api-data.line.me/v2/bot/message/${msgId}/content`,
+          { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+        );
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const ext = fileName.toLowerCase().split(".").pop();
+          const mime = ext === "csv" ? "text/csv"
+            : ext === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            : "application/vnd.ms-excel";
+          const { getOpenAI } = await import("../llm/client");
+          const response = await getOpenAI().chat.completions.create({
+            model: "gpt-5.4-mini",
+            messages: [
+              { role: "system", content: "添付されたスプレッドシートの内容をできるだけ正確に文字起こししてください。表構造を維持してください。" },
+              {
+                role: "user",
+                content: [
+                  { type: "file", file: { file_data: `data:${mime};base64,${Buffer.from(buffer).toString("base64")}`, filename: fileName } },
+                  { type: "text", text: "このスプレッドシートの内容を読み取ってください。" },
+                ] as never,
+              },
+            ],
+            max_completion_tokens: 4096,
+          });
+          const sheetText = response.choices[0]?.message?.content || "";
+          if (sheetText) {
+            event.text = `[表計算: ${fileName}]\n${sheetText}`;
+          } else {
+            event.text = `[表計算: ${fileName}（読み取れませんでした）]`;
+          }
+        }
+      } catch (err) {
+        console.warn("Excel fetch failed:", err instanceof Error ? err.message : err);
+        event.text = `[表計算: ${fileName}（取得に失敗しました）]`;
+      }
     } else if (fileName.toLowerCase().endsWith(".docx") || fileName.toLowerCase().endsWith(".doc")) {
       try {
         const res = await fetch(

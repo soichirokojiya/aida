@@ -236,6 +236,32 @@ async function enrichSlackEvent(event: NormalizedMessageEvent): Promise<Normaliz
           event.text = `[PDF: ${name}（読み取れませんでした）]`;
         }
 
+      } else if (mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || mime === "application/vnd.ms-excel" || mime === "text/csv" || name.endsWith(".xlsx") || name.endsWith(".xls") || name.endsWith(".csv")) {
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        const { getOpenAI } = await import("../llm/client");
+        const response = await getOpenAI().chat.completions.create({
+          model: "gpt-5.4-mini",
+          messages: [
+            { role: "system", content: "添付されたスプレッドシートの内容をできるだけ正確に文字起こししてください。表構造を維持してください。" },
+            {
+              role: "user",
+              content: [
+                { type: "file", file: { file_data: `data:${mime};base64,${Buffer.from(buffer).toString("base64")}`, filename: name } },
+                { type: "text", text: "このスプレッドシートの内容を読み取ってください。" },
+              ] as never,
+            },
+          ],
+          max_completion_tokens: 4096,
+        });
+        const sheetText = response.choices[0]?.message?.content || "";
+        if (sheetText) {
+          event.text = `[表計算: ${name}]\n${sheetText}`;
+        } else {
+          event.text = `[表計算: ${name}（読み取れませんでした）]`;
+        }
+
       } else if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || mime === "application/msword" || name.endsWith(".docx") || name.endsWith(".doc")) {
         // Word documents: download and use LLM to extract content from the file
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });

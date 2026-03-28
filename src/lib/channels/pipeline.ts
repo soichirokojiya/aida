@@ -819,7 +819,7 @@ export async function processMessage(
   }
 
   // File/video messages: save to conversation history but don't auto-respond
-  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text === "[動画]") {
+  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:") || event.text === "[動画]") {
     const conversation = await getOrCreateConversation(event);
     await saveMessage(conversation.id, event, "normal", 0);
     return;
