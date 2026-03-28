@@ -180,28 +180,50 @@ model SlackUser {
   slackUserId     String
   teamId          String
   displayName     String?
-  linkedLineUserId String?
   trialEndsAt     DateTime
+  trialReminderSent Boolean @default(false)
   lastActiveAt    DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  workspace SlackWorkspace @relation(fields: [teamId], references: [teamId])
+  dmSubscription SlackDmSubscription?
+  workspace      SlackWorkspace @relation(fields: [teamId], references: [teamId])
 
   @@unique([slackUserId, teamId])
   @@index([teamId])
   @@index([trialEndsAt])
-  @@index([linkedLineUserId])
 }
 
-model LinkCode {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  lineUserId    String
-  expiresAt     DateTime
-  usedAt        DateTime?
-  createdAt     DateTime @default(now())
+model SlackDmSubscription {
+  id                    String   @id @default(cuid())
+  slackUserId           String
+  teamId                String
+  status                String   @default("active") // active, past_due, canceled, expired
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  @@index([code])
-  @@index([lineUserId])
+  user SlackUser @relation(fields: [slackUserId, teamId], references: [slackUserId, teamId])
+
+  @@unique([slackUserId, teamId])
+  @@index([status])
+}
+
+model SlackChannelSubscription {
+  id                    String   @id @default(cuid())
+  channelId             String   @unique
+  teamId                String
+  payerSlackUserId      String
+  status                String   @default("active") // active, past_due, canceled, expired
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([channelId])
+  @@index([payerSlackUserId])
+  @@index([status])
 }

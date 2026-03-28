@@ -13,6 +13,11 @@ function getStripe(): Stripe {
 
 const DM_PRICE_ID = process.env.STRIPE_DM_PRICE_ID!;
 const GROUP_PRICE_ID = process.env.STRIPE_GROUP_PRICE_ID!;
+// Slack uses the same price IDs (same amount ¥490/¥980)
+const SLACK_DM_PRICE_ID = process.env.STRIPE_SLACK_DM_PRICE_ID || DM_PRICE_ID;
+const SLACK_CHANNEL_PRICE_ID = process.env.STRIPE_SLACK_CHANNEL_PRICE_ID || GROUP_PRICE_ID;
+
+// ── LINE ──
 
 export async function createDmCheckoutUrl(lineUserId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
@@ -21,7 +26,7 @@ export async function createDmCheckoutUrl(lineUserId: string): Promise<string> {
     line_items: [{ price: DM_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=dm`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { lineUserId, type: "dm" },
+    metadata: { lineUserId, type: "dm", channel: "line" },
     allow_promotion_codes: true,
   });
   return session.url!;
@@ -34,17 +39,54 @@ export async function createGroupCheckoutUrl(lineUserId: string, groupId: string
     line_items: [{ price: GROUP_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=group`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { lineUserId, groupId, type: "group" },
+    metadata: { lineUserId, groupId, type: "group", channel: "line" },
     allow_promotion_codes: true,
   });
   return session.url!;
 }
 
+// ── Slack ──
+
+export async function createSlackDmCheckoutUrl(slackUserId: string, teamId: string): Promise<string> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const session = await getStripe().checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: SLACK_DM_PRICE_ID, quantity: 1 }],
+    success_url: `${baseUrl}/billing/success?type=slack_dm`,
+    cancel_url: `${baseUrl}/billing/cancel`,
+    metadata: { slackUserId, teamId, type: "dm", channel: "slack" },
+    allow_promotion_codes: true,
+  });
+  return session.url!;
+}
+
+export async function createSlackChannelCheckoutUrl(slackUserId: string, teamId: string, channelId: string): Promise<string> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const session = await getStripe().checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: SLACK_CHANNEL_PRICE_ID, quantity: 1 }],
+    success_url: `${baseUrl}/billing/success?type=slack_channel`,
+    cancel_url: `${baseUrl}/billing/cancel`,
+    metadata: { slackUserId, teamId, channelId, type: "channel", channel: "slack" },
+    allow_promotion_codes: true,
+  });
+  return session.url!;
+}
+
+// ── Webhook ──
+
 export interface WebhookResult {
   type: string;
+  channel?: "line" | "slack";
+  // LINE
   lineUserId?: string;
   groupId?: string;
-  subscriptionType?: "dm" | "group";
+  // Slack
+  slackUserId?: string;
+  teamId?: string;
+  channelId?: string;
+  // Common
+  subscriptionType?: "dm" | "group" | "channel";
   stripeSubscriptionId?: string;
 }
 
@@ -62,21 +104,31 @@ export async function handleWebhookEvent(
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
+      const meta = session.metadata || {};
       return {
         type: "checkout_completed",
-        lineUserId: session.metadata?.lineUserId,
-        groupId: session.metadata?.groupId,
-        subscriptionType: session.metadata?.type as "dm" | "group",
+        channel: (meta.channel as "line" | "slack") || "line",
+        lineUserId: meta.lineUserId,
+        groupId: meta.groupId,
+        slackUserId: meta.slackUserId,
+        teamId: meta.teamId,
+        channelId: meta.channelId,
+        subscriptionType: meta.type as "dm" | "group" | "channel",
         stripeSubscriptionId: session.subscription as string,
       };
     }
     case "customer.subscription.deleted": {
       const sub = event.data.object;
+      const meta = sub.metadata || {};
       return {
         type: "subscription_cancelled",
-        lineUserId: sub.metadata?.lineUserId,
-        groupId: sub.metadata?.groupId,
-        subscriptionType: sub.metadata?.type as "dm" | "group",
+        channel: (meta.channel as "line" | "slack") || "line",
+        lineUserId: meta.lineUserId,
+        groupId: meta.groupId,
+        slackUserId: meta.slackUserId,
+        teamId: meta.teamId,
+        channelId: meta.channelId,
+        subscriptionType: meta.type as "dm" | "group" | "channel",
         stripeSubscriptionId: sub.id,
       };
     }

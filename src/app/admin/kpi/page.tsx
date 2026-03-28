@@ -19,16 +19,24 @@ export default async function KpiPage() {
   const slackTrialUsers = await prisma.slackUser.count({ where: { trialEndsAt: { gt: now } } });
   const slackWorkspaces = await prisma.slackWorkspace.count();
 
-  // --- サブスクリプション ---
+  // --- サブスクリプション（LINE） ---
   const activeDmSubs = await prisma.dmSubscription.count({ where: { status: "active" } });
   const canceledDmSubs = await prisma.dmSubscription.count({ where: { status: "canceled" } });
   const activeGroupSubs = await prisma.groupSubscription.count({ where: { status: "active" } });
   const canceledGroupSubs = await prisma.groupSubscription.count({ where: { status: "canceled" } });
 
+  // --- サブスクリプション（Slack） ---
+  const slackActiveDmSubs = await prisma.slackDmSubscription.count({ where: { status: "active" } });
+  const slackActiveChannelSubs = await prisma.slackChannelSubscription.count({ where: { status: "active" } });
+
   // --- MRR ---
   const dmMrr = activeDmSubs * 490;
   const groupMrr = activeGroupSubs * 980;
-  const totalMrr = dmMrr + groupMrr;
+  const slackDmMrr = slackActiveDmSubs * 490;
+  const slackChannelMrr = slackActiveChannelSubs * 980;
+  const lineMrr = dmMrr + groupMrr;
+  const slackMrr = slackDmMrr + slackChannelMrr;
+  const totalMrr = lineMrr + slackMrr;
 
   // --- Churn ---
   const churnedDm = await prisma.dmSubscription.count({
@@ -115,9 +123,11 @@ export default async function KpiPage() {
       <h1 className="text-2xl font-bold mb-6">KPIダッシュボード</h1>
 
       <Section title="収益">
-        <Card label="MRR" value={`¥${totalMrr.toLocaleString()}`} sub={`DM ¥${dmMrr} + グループ ¥${groupMrr}`} />
-        <Card label="DM契約数" value={activeDmSubs} sub="¥490/月" />
-        <Card label="グループ契約数" value={activeGroupSubs} sub="¥980/月" />
+        <Card label="合計MRR" value={`¥${totalMrr.toLocaleString()}`} sub={`LINE ¥${lineMrr} / Slack ¥${slackMrr}`} />
+        <Card label="LINE DM契約" value={activeDmSubs} sub="¥490/月" />
+        <Card label="LINEグループ契約" value={activeGroupSubs} sub="¥980/月" />
+        <Card label="Slack DM契約" value={slackActiveDmSubs} sub="¥490/月" />
+        <Card label="Slackチャンネル契約" value={slackActiveChannelSubs} sub="¥980/月" />
         <Card label="粗利率" value={totalMrr > 0 ? `${Math.round(((totalMrr - monthCostJpy) / totalMrr) * 100)}%` : "-"} />
       </Section>
 

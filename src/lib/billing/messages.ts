@@ -32,6 +32,24 @@ export function getGroupExpiredMessage(groupCheckoutUrl: string): string {
 ${groupCheckoutUrl}`;
 }
 
+export function getSlackDmExpiredMessage(checkoutUrl: string): string {
+  return `おためし期間が終わっちゃって、今はお返事できないんだ。
+
+また話したいなって思ったら、ここから登録してもらえるとうれしいです。
+
+▼ うめこ for Slack パーソナルプラン（月額490円）
+${checkoutUrl}`;
+}
+
+export function getSlackChannelExpiredMessage(checkoutUrl: string): string {
+  return `このチャンネルではまだうめこが使えない状態なんだ。
+
+誰か1人が登録してくれれば、チャンネルのみんなが使えるようになるよ。
+
+▼ うめこ for Slack チャンネルプラン（月額980円）
+${checkoutUrl}`;
+}
+
 export function getWelcomeMessage(): string {
   return `はじめまして、うめこです！
 

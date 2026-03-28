@@ -21,19 +21,25 @@ export default async function SlackAdminPage() {
   const slackUsers = await prisma.slackUser.findMany({
     orderBy: { updatedAt: "desc" },
     take: 100,
-    include: { workspace: true },
+    include: { workspace: true, dmSubscription: true },
   });
 
-  // Slack conversations
-  const slackConversations = await prisma.conversation.count({
-    where: { channelType: "slack" },
-  });
+  // Subscriptions
+  const activeDmSubs = await prisma.slackDmSubscription.count({ where: { status: "active" } });
+  const activeChannelSubs = await prisma.slackChannelSubscription.count({ where: { status: "active" } });
+  const channelSubs = await prisma.slackChannelSubscription.findMany({ orderBy: { createdAt: "desc" } });
+
+  // Conversations
   const slackChannels = await prisma.conversation.count({
     where: { channelType: "slack", externalThreadId: { not: { startsWith: "D" } } },
   });
   const slackDms = await prisma.conversation.count({
     where: { channelType: "slack", externalThreadId: { startsWith: "D" } },
   });
+
+  // MRR
+  const dmMrr = activeDmSubs * 490;
+  const channelMrr = activeChannelSubs * 980;
 
   const now = new Date();
 
@@ -52,11 +58,25 @@ export default async function SlackAdminPage() {
           <p className="text-2xl font-bold">{slackUsers.length}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <p className="text-xs text-gray-500 mb-1">チャンネル</p>
+          <p className="text-xs text-gray-500 mb-1">DM契約</p>
+          <p className="text-2xl font-bold">{activeDmSubs}</p>
+          <p className="text-xs text-gray-400 mt-1">¥{dmMrr.toLocaleString()}/月</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <p className="text-xs text-gray-500 mb-1">チャンネル契約</p>
+          <p className="text-2xl font-bold">{activeChannelSubs}</p>
+          <p className="text-xs text-gray-400 mt-1">¥{channelMrr.toLocaleString()}/月</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <p className="text-xs text-gray-500 mb-1">Slack MRR</p>
+          <p className="text-2xl font-bold">¥{(dmMrr + channelMrr).toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-gray-200">
+          <p className="text-xs text-gray-500 mb-1">チャンネル数</p>
           <p className="text-2xl font-bold">{slackChannels}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <p className="text-xs text-gray-500 mb-1">Slack DM</p>
+          <p className="text-xs text-gray-500 mb-1">Slack DM数</p>
           <p className="text-2xl font-bold">{slackDms}</p>
         </div>
       </div>
@@ -95,6 +115,46 @@ export default async function SlackAdminPage() {
         </TableBody>
       </Table>
 
+      {/* チャンネル契約一覧 */}
+      <h2 className="font-semibold text-lg mt-10 mb-4">チャンネル契約一覧</h2>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Channel ID</TableHead>
+            <TableHead>Team ID</TableHead>
+            <TableHead>支払者</TableHead>
+            <TableHead>ステータス</TableHead>
+            <TableHead>契約日</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {channelSubs.map((sub) => (
+            <TableRow key={sub.id}>
+              <TableCell className="font-mono text-xs">{sub.channelId}</TableCell>
+              <TableCell className="font-mono text-xs">{sub.teamId}</TableCell>
+              <TableCell className="font-mono text-xs">{sub.payerSlackUserId}</TableCell>
+              <TableCell>
+                {sub.status === "active" ? (
+                  <Badge className="bg-green-100 text-green-700 text-xs">有効</Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-700 text-xs">{sub.status}</Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-xs text-gray-500 whitespace-nowrap">
+                {toJST(sub.createdAt)}
+              </TableCell>
+            </TableRow>
+          ))}
+          {channelSubs.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-gray-400 py-8">
+                まだチャンネル契約がありません
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
       {/* Slackユーザー一覧 */}
       <h2 className="font-semibold text-lg mt-10 mb-4">Slackユーザー一覧</h2>
       <p className="text-sm text-gray-500 mb-4">合計: {slackUsers.length}人</p>
@@ -105,6 +165,7 @@ export default async function SlackAdminPage() {
             <TableHead>表示名</TableHead>
             <TableHead>ワークスペース</TableHead>
             <TableHead>トライアル</TableHead>
+            <TableHead>DM契約</TableHead>
             <TableHead>最終アクティブ</TableHead>
             <TableHead>登録日</TableHead>
           </TableRow>
@@ -112,6 +173,7 @@ export default async function SlackAdminPage() {
         <TableBody>
           {slackUsers.map((u) => {
             const inTrial = u.trialEndsAt > now;
+            const dmStatus = u.dmSubscription?.status;
             return (
               <TableRow key={u.id}>
                 <TableCell className="font-mono text-xs">{u.slackUserId}</TableCell>
@@ -126,6 +188,15 @@ export default async function SlackAdminPage() {
                     <span className="text-xs text-gray-400">終了</span>
                   )}
                 </TableCell>
+                <TableCell>
+                  {dmStatus === "active" ? (
+                    <Badge className="bg-green-100 text-green-700 text-xs">有効</Badge>
+                  ) : dmStatus === "canceled" ? (
+                    <Badge className="bg-red-100 text-red-700 text-xs">解約済</Badge>
+                  ) : (
+                    <span className="text-xs text-gray-400">未契約</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-gray-500 whitespace-nowrap">
                   {u.lastActiveAt ? toJST(u.lastActiveAt) : "-"}
                 </TableCell>
@@ -137,7 +208,7 @@ export default async function SlackAdminPage() {
           })}
           {slackUsers.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+              <TableCell colSpan={7} className="text-center text-gray-400 py-8">
                 まだSlackユーザーがいません
               </TableCell>
             </TableRow>

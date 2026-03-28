@@ -12,7 +12,9 @@ import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } fr
 import { isDmActive, isGroupActive } from "../billing/check";
 import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages";
 import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
-import { redeemLinkCode, isSlackUserActive, isSlackChannelActive } from "../billing/link";
+import { isSlackDmActive, isSlackChannelActive } from "../billing/link";
+import { createSlackDmCheckoutUrl, createSlackChannelCheckoutUrl } from "../billing/stripe";
+import { getSlackDmExpiredMessage, getSlackChannelExpiredMessage } from "../billing/messages";
 import { getConversationMemory, maybeUpdateSummary } from "../memory/summary";
 
 const BOT_NAME = "うめこ";
@@ -718,14 +720,6 @@ export async function processMessage(
   // Check billing status
   if (event.channelType === "line") {
     if (event.isDirectMessage) {
-      // Handle "Slack連携" request from LINE DM
-      if (event.text.match(/slack連携|Slack連携|スラック連携/i)) {
-        const { createLinkCode } = await import("../billing/link");
-        const code = await createLinkCode(event.senderId);
-        await sendResponse(adapter, event, `Slack連携コードを発行したよ！\n\n連携コード: ${code}\n\nSlackでうめこに「${code}」とDMで送ってね。\n（10分間有効）`);
-        return;
-      }
-
       const active = await isDmActive(event.senderId);
       if (!active) {
         try {
@@ -755,38 +749,30 @@ export async function processMessage(
       }
     }
   } else if (event.channelType === "slack") {
-    // Extract teamId from rawEvent
     const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
 
-    // Check if this is a link code in Slack DM
-    if (event.isDirectMessage && /^[A-Z0-9]{6}$/.test(event.text.trim())) {
-      const result = await redeemLinkCode(event.text.trim(), event.senderId, teamId);
-      await sendResponse(adapter, event, result.message);
-      return;
-    }
-
-    // Check if Slack user is linked to a paid LINE account
     if (event.isDirectMessage) {
-      const active = await isSlackUserActive(event.senderId, teamId);
+      const active = await isSlackDmActive(event.senderId, teamId);
       if (!active) {
-        await sendResponse(adapter, event,
-          "Slackでうめこを使うには、LINEの有料会員との連携が必要だよ。\n\n" +
-          "1. LINEでうめこに「Slack連携」と送る\n" +
-          "2. 届いた6桁のコードをここに送る\n\n" +
-          "まだLINEで登録してない場合は、こちらから → https://lin.ee/nHtneAR"
-        );
+        try {
+          const url = await createSlackDmCheckoutUrl(event.senderId, teamId);
+          await sendResponse(adapter, event, getSlackDmExpiredMessage(url));
+        } catch {
+          await sendResponse(adapter, event, "おためし期間が終了しています。パーソナルプラン（月額¥490）への登録をお願いします。");
+        }
         return;
       }
     } else {
-      const active = await isSlackChannelActive(event.externalThreadId);
+      const active = await isSlackChannelActive(event.externalThreadId, event.senderId, teamId);
       if (!active) {
         const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
         if (mentioned) {
-          await sendResponse(adapter, event,
-            "このチャンネルでうめこを使うには、誰か1人がLINEの有料会員と連携してね。\n\n" +
-            "1. LINEでうめこに「Slack連携」と送る\n" +
-            "2. 届いた6桁のコードをうめこにDMで送る"
-          );
+          try {
+            const url = await createSlackChannelCheckoutUrl(event.senderId, teamId, event.externalThreadId);
+            await sendResponse(adapter, event, getSlackChannelExpiredMessage(url));
+          } catch {
+            await sendResponse(adapter, event, "このチャンネルではまだうめこが有効になっていません。チャンネルプラン（月額¥980）への登録をお願いします。");
+          }
           return;
         }
         const conversation = await getOrCreateConversation(event);
