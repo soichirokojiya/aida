@@ -591,6 +591,15 @@ async function handleGroupMessage(
   let isDirectedAtBot = false;
   let needsIntervention = false;
   let isComplex = false;
+
+  // Rule-based intervention trigger: strong emotional keywords force intervention
+  const strongEmotionKeywords = /不快|受け入れられ|許せ|信じられ|いい加減にし|もう無理|関係.*難し|我慢.*限界|裏切|見損な|最低|ふざけ|ありえ|頭にく|腹が立|もう終わり|縁を切/;
+  if (strongEmotionKeywords.test(event.text) && event.text.length > 30) {
+    needsIntervention = true;
+    isComplex = true;
+    console.log("Rule-based intervention triggered:", event.text.slice(0, 50));
+  }
+
   if (!mentioned) {
     const lastBotMsg = await prisma.message.findFirst({
       where: { conversationId: conversation.id, senderRole: "bot" },
@@ -625,8 +634,8 @@ complex: うめこが丁寧に考えて答えるべき内容か？
       { purpose: "intent" }
     );
     isDirectedAtBot = judgment.directed === true;
-    needsIntervention = judgment.intervention === true;
-    isComplex = judgment.complex === true;
+    needsIntervention = needsIntervention || judgment.intervention === true;
+    isComplex = isComplex || judgment.complex === true;
   } else {
     // mentioned directly — check complexity from message content
     isComplex = needsIntervention || event.text.length > 50;
