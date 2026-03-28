@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 const BASE_URL = "https://umeko.life";
 
 export const metadata: Metadata = {
-  title: "うめこ｜LINE・Slackで使える会話整理AI｜言いづらいことをやわらかく",
+  title: "うめこ｜LINE・Slackで使える言い換えAI・会話サポート",
   description:
-    "LINEグループやSlackチャンネルに招待すれば会話を見守り、1対1なら伝え方の相談ができるAI「うめこ」。きつい言い方をやわらかくしたり、すれ違いを整理したり。1ヶ月無料、月額490円から。",
+    "うめこは、言いづらいことをやわらかく整えるLINE・Slack対応のAIです。家族・夫婦・職場のすれ違いや気まずい会話を、少しずつ軽くします。1ヶ月無料。",
   metadataBase: new URL(BASE_URL),
   alternates: {
     canonical: "/",
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     "max-video-preview": -1,
   },
   openGraph: {
-    title: "うめこ｜LINE・Slackで使える会話整理AI",
+    title: "うめこ｜LINE・Slackで使える言い換えAI・会話サポート",
     description:
-      "言いづらいことをやわらかく。すれ違いを少しずつ軽く。LINEグループやSlackチャンネルに招待しても、1対1で相談しても。1ヶ月無料。",
+      "うめこは、言いづらいことをやわらかく整えるLINE・Slack対応のAIです。家族・夫婦・職場のすれ違いや気まずい会話を、少しずつ軽くします。1ヶ月無料。",
     url: BASE_URL,
     siteName: "うめこ",
     images: [
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "うめこ｜LINE・Slackで使える会話整理AI",
+    title: "うめこ｜LINE・Slackで使える言い換えAI・会話サポート",
     description:
-      "言いづらいことをやわらかく。すれ違いを少しずつ軽く。1ヶ月無料。",
+      "うめこは、言いづらいことをやわらかく整えるLINE・Slack対応のAIです。家族・夫婦・職場のすれ違いや気まずい会話を、少しずつ軽くします。1ヶ月無料。",
     images: ["/ogp.png"],
   },
   other: {
