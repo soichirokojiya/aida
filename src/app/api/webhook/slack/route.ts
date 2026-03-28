@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSlackAdapter, verifySlackRequest, trackSlackUser, getBotUserIdForTeam } from "@/lib/channels/slack";
+import { createSlackAdapter, verifySlackRequest, trackSlackUser, getBotUserIdForTeam, enrichSlackEvent } from "@/lib/channels/slack";
 import { processMessage } from "@/lib/channels/pipeline";
 
 export async function POST(request: NextRequest) {
@@ -61,8 +61,10 @@ export async function POST(request: NextRequest) {
           // Track Slack user (non-blocking)
           trackSlackUser(event.senderId, teamId).catch(() => {});
 
-          console.log(`Slack[${teamId}]: Processing ${event.isDirectMessage ? "DM" : "Channel"} text="${event.text.slice(0, 30)}"`);
-          await processMessage(event, adapter);
+          // Enrich with file content (images, audio, PDF)
+          const enriched = await enrichSlackEvent(event);
+          console.log(`Slack[${teamId}]: Processing ${enriched.isDirectMessage ? "DM" : "Channel"} text="${enriched.text.slice(0, 30)}" [${enriched.imageUrls ? "image" : enriched.audioUrl ? "audio" : "text"}]`);
+          await processMessage(enriched, adapter);
           console.log(`Slack[${teamId}]: Done ${Date.now() - start}ms`);
         } catch (err) {
           console.error(`Slack[${teamId}]: Error after ${Date.now() - start}ms:`, err instanceof Error ? err.message : err);

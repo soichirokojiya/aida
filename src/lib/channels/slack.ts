@@ -2,6 +2,15 @@ import crypto from "crypto";
 import { prisma } from "../db/prisma";
 import { ChannelAdapter, NormalizedMessageEvent } from "./types";
 
+interface SlackFile {
+  id: string;
+  name?: string;
+  mimetype?: string;
+  filetype?: string;
+  url_private?: string;
+  url_private_download?: string;
+}
+
 interface SlackEvent {
   type: string;
   subtype?: string;
@@ -12,6 +21,7 @@ interface SlackEvent {
   ts?: string;
   thread_ts?: string;
   bot_id?: string;
+  files?: SlackFile[];
 }
 
 interface SlackEventPayload {
@@ -120,9 +130,9 @@ export function createSlackAdapter(teamId: string): ChannelAdapter {
       if (!payload.event || (eventType !== "message" && eventType !== "app_mention")) {
         return [];
       }
-      if (payload.event.bot_id || payload.event.subtype) {
-        return [];
-      }
+      // Skip bot messages, but allow file_share subtype
+      if (payload.event.bot_id) return [];
+      if (payload.event.subtype && payload.event.subtype !== "file_share") return [];
 
       const event = payload.event;
       const isDm = event.channel_type === "im";
@@ -164,4 +174,77 @@ export function createSlackAdapter(teamId: string): ChannelAdapter {
 // Legacy adapter for backwards compat (uses env var token)
 export const slackAdapter: ChannelAdapter = createSlackAdapter("__legacy__");
 
-export { getUserDisplayName as getSlackUserDisplayName, trackSlackUser, getBotUserIdForTeam };
+// Enrich Slack event with file content (images, audio, PDF)
+async function enrichSlackEvent(event: NormalizedMessageEvent): Promise<NormalizedMessageEvent> {
+  const rawEvent = event.rawEvent as SlackEvent & { team_id?: string };
+  const files = rawEvent.files;
+  if (!files?.length) return event;
+
+  const teamId = rawEvent.team_id || "__legacy__";
+  const token = await getBotTokenForTeam(teamId);
+
+  for (const file of files) {
+    const url = file.url_private_download || file.url_private;
+    if (!url) continue;
+
+    const mime = file.mimetype || "";
+    const name = file.name || "";
+
+    try {
+      if (mime.startsWith("image/")) {
+        // Download image and convert to base64
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        const dataUrl = `data:${mime};base64,${base64}`;
+        event.imageUrls = [...(event.imageUrls || []), dataUrl];
+        if (!event.text || event.text.trim() === "") event.text = "[画像]";
+
+      } else if (mime.startsWith("audio/")) {
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        event.audioUrl = `data:${mime};base64,${base64}`;
+        if (!event.text || event.text.trim() === "") event.text = "[音声メッセージ]";
+
+      } else if (mime === "application/pdf") {
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        // Use same PDF extraction as LINE
+        const { getOpenAI } = await import("../llm/client");
+        const response = await getOpenAI().chat.completions.create({
+          model: "gpt-5.4-mini",
+          messages: [
+            { role: "system", content: "添付されたPDFの内容をできるだけ正確に文字起こししてください。表やレイアウトも可能な範囲でテキストとして再現してください。" },
+            {
+              role: "user",
+              content: [
+                { type: "file", file: { file_data: `data:application/pdf;base64,${Buffer.from(buffer).toString("base64")}`, filename: name } },
+                { type: "text", text: "このPDFの内容を読み取ってください。" },
+              ] as never,
+            },
+          ],
+          max_completion_tokens: 4096,
+        });
+        const pdfText = response.choices[0]?.message?.content || "";
+        if (pdfText) {
+          event.text = `[PDF: ${name}]\n${pdfText}`;
+        } else {
+          event.text = `[PDF: ${name}（読み取れませんでした）]`;
+        }
+
+      } else if (mime === "video/mp4" || mime.startsWith("video/")) {
+        event.text = "[動画]";
+      }
+    } catch (err) {
+      console.warn("Slack file processing failed:", name, err instanceof Error ? err.message : err);
+    }
+  }
+
+  return event;
+}
+
+export { getUserDisplayName as getSlackUserDisplayName, trackSlackUser, getBotUserIdForTeam, enrichSlackEvent };

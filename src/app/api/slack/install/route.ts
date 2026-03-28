@@ -12,6 +12,7 @@ const SCOPES = [
   "channels:read",
   "groups:read",
   "im:read",
+  "files:read",
 ].join(",");
 
 export async function GET() {
