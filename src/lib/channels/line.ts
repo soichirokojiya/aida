@@ -182,6 +182,8 @@ async function enrichLineEvent(event: NormalizedMessageEvent): Promise<Normalize
 
   if (!msgId) return event;
 
+  console.log(`enrichLineEvent: type=${msgType} id=${msgId} fileName=${rawEvent.message?.fileName || "none"}`);
+
   if (msgType === "image") {
     const dataUrl = await getLineContent(msgId, "image/jpeg");
     if (dataUrl) {
