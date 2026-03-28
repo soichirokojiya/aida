@@ -23,6 +23,24 @@ function selectModel(purpose: string): string {
   return FULL_MODEL_PURPOSES.has(purpose) ? MODEL_FULL : MODEL_MINI;
 }
 
+// 現在日時を日本時間でフォーマット（LLMに時間感覚を与える）
+function currentDatetimeJST(): string {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = jst.getUTCMonth() + 1;
+  const d = jst.getUTCDate();
+  const h = jst.getUTCHours();
+  const min = String(jst.getUTCMinutes()).padStart(2, "0");
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const w = weekdays[jst.getUTCDay()];
+  return `${y}年${m}月${d}日(${w}) ${h}:${min}`;
+}
+
+function withDatetime(systemPrompt: string): string {
+  return `現在の日時: ${currentDatetimeJST()}\n\n${systemPrompt}`;
+}
+
 interface LlmContext {
   purpose: string;
   conversationId?: string;
@@ -79,7 +97,7 @@ export async function chatCompletion(
   const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: withDatetime(systemPrompt) },
       { role: "user", content: userContent as never },
     ],
     temperature: 0.3,
@@ -172,7 +190,7 @@ export async function webSearchCompletion(
   try {
     const text = await responsesApi({
       model,
-      instructions: systemPrompt,
+      instructions: withDatetime(systemPrompt),
       tools: [{ type: "web_search_preview" }],
       input: userMessage,
     });
@@ -195,7 +213,7 @@ export async function chatCompletionJson<T>(
   const response = await getOpenAI().chat.completions.create({
     model,
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: withDatetime(systemPrompt) },
       { role: "user", content: userMessage },
     ],
     temperature: 0.1,
