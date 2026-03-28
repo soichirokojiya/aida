@@ -73,6 +73,8 @@ async function handleFollow(event: RawLineEvent) {
   // Welcome message is handled by LINE Official Account's greeting message
 }
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-line-signature") || "";

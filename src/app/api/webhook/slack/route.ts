@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSlackAdapter, verifySlackRequest, trackSlackUser, getBotUserIdForTeam, enrichSlackEvent } from "@/lib/channels/slack";
 import { processMessage } from "@/lib/channels/pipeline";
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
