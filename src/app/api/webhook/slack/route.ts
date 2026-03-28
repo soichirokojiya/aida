@@ -3,39 +3,62 @@ import { slackAdapter, verifySlackRequest } from "@/lib/channels/slack";
 import { processMessage } from "@/lib/channels/pipeline";
 
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
-  const body = JSON.parse(rawBody);
+  try {
+    const rawBody = await request.text();
+    const body = JSON.parse(rawBody);
 
-  // Handle URL verification challenge (no signature check needed)
-  if (body.type === "url_verification") {
-    return NextResponse.json({ challenge: body.challenge });
-  }
+    // Log incoming payload type
+    console.log("Slack webhook received:", body.type, body.event?.type || "no event");
 
-  // Verify Slack signature for all other requests
-  const timestamp = request.headers.get("x-slack-request-timestamp") || "";
-  const signature = request.headers.get("x-slack-signature") || "";
+    // Handle URL verification challenge
+    if (body.type === "url_verification") {
+      return NextResponse.json({ challenge: body.challenge });
+    }
 
-  // Skip signature check if no signature provided (for debugging)
-  if (signature && !verifySlackRequest(rawBody, timestamp, signature)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  }
+    // Verify Slack signature
+    const timestamp = request.headers.get("x-slack-request-timestamp") || "";
+    const signature = request.headers.get("x-slack-signature") || "";
 
-  // Handle events
-  if (body.type === "event_callback" && body.event) {
-    const events = slackAdapter.normalizeEvents(body);
+    if (signature && !verifySlackRequest(rawBody, timestamp, signature)) {
+      console.log("Slack: signature verification failed");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
 
-    for (const event of events) {
-      const start = Date.now();
-      try {
-        console.log(`Slack: Processing ${event.isDirectMessage ? "DM" : "Channel"} from ${event.senderId.slice(0, 8)}`);
-        await processMessage(event, slackAdapter);
-        console.log(`Slack: Done ${Date.now() - start}ms`);
-      } catch (err) {
-        console.error(`Slack: Error after ${Date.now() - start}ms:`, err instanceof Error ? err.stack : err);
-        return NextResponse.json({ error: String(err) }, { status: 500 });
+    // Ignore retry requests from Slack
+    if (request.headers.get("x-slack-retry-num")) {
+      console.log("Slack: ignoring retry");
+      return NextResponse.json({ ok: true });
+    }
+
+    // Handle events
+    if (body.type === "event_callback" && body.event) {
+      // Ignore bot messages
+      if (body.event.bot_id || body.event.subtype) {
+        console.log("Slack: ignoring bot/subtype message");
+        return NextResponse.json({ ok: true });
+      }
+
+      const events = slackAdapter.normalizeEvents(body);
+      console.log("Slack: normalized", events.length, "events");
+
+      for (const event of events) {
+        const start = Date.now();
+        try {
+          console.log(`Slack: Processing ${event.isDirectMessage ? "DM" : "Channel"} text="${event.text.slice(0, 30)}"`);
+          await processMessage(event, slackAdapter);
+          console.log(`Slack: Done ${Date.now() - start}ms`);
+        } catch (err) {
+          console.error(`Slack: Error after ${Date.now() - start}ms:`, err instanceof Error ? err.message : err);
+        }
       }
     }
-  }
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Slack webhook error:", error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      { error: "Internal Server Error", detail: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
 }
