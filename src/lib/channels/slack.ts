@@ -99,7 +99,7 @@ export const slackAdapter: ChannelAdapter = {
   },
 
   async sendPush(channelId: string, text: string): Promise<void> {
-    await fetch("https://slack.com/api/chat.postMessage", {
+    const res = await fetch("https://slack.com/api/chat.postMessage", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,6 +110,12 @@ export const slackAdapter: ChannelAdapter = {
         text,
       }),
     });
+    const data = await res.json();
+    if (!data.ok) {
+      console.error("Slack sendPush error:", data.error, "channel:", channelId);
+    } else {
+      console.log("Slack sendPush success to", channelId);
+    }
   },
 };
 
