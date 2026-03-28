@@ -842,14 +842,27 @@ export async function processMessage(
     return;
   }
 
-  // File/video messages: save to conversation history but don't auto-respond
-  if (event.text.startsWith("[PDF:") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:") || event.text === "[動画]") {
+  // File messages: save content to history and send brief acknowledgment
+  if (event.text.startsWith("[PDF:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:")) {
     const conversation = await getOrCreateConversation(event);
     await saveMessage(conversation.id, event, "normal", 0);
+    if (event.isDirectMessage) {
+      await sendResponse(adapter, event, "読み取ったよ。内容について聞きたいことがあれば教えてね。");
+    }
     return;
   }
 
-  // Image-only messages: describe the image and save description, but don't respond
+  // Unknown file types
+  if (event.text.startsWith("[ファイル:")) {
+    const conversation = await getOrCreateConversation(event);
+    await saveMessage(conversation.id, event, "normal", 0);
+    if (event.isDirectMessage) {
+      await sendResponse(adapter, event, "ごめんね、この形式のファイルは読み取れないんだ。PDFやWord、Excelなら読めるよ。");
+    }
+    return;
+  }
+
+  // Image-only messages: describe the image, save, and acknowledge
   if (event.text === "[画像]" && event.imageUrls?.length) {
     const conversation = await getOrCreateConversation(event);
     try {
@@ -864,6 +877,9 @@ export async function processMessage(
       // Keep as [画像] if description fails
     }
     await saveMessage(conversation.id, event, "normal", 0);
+    if (event.isDirectMessage) {
+      await sendResponse(adapter, event, "画像を見たよ。何か聞きたいことがあれば教えてね。");
+    }
     return;
   }
 
