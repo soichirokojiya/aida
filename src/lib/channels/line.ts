@@ -4,7 +4,7 @@ interface LineEvent {
   type: string;
   replyToken?: string;
   source?: { type: string; groupId?: string; roomId?: string; userId?: string };
-  message?: { id: string; type: string; text?: string; duration?: number; contentProvider?: { type: string } };
+  message?: { id: string; type: string; text?: string; duration?: number; fileName?: string; fileSize?: number; contentProvider?: { type: string } };
   timestamp: number;
 }
 
@@ -67,7 +67,7 @@ async function getLineContent(messageId: string, mimeType: string): Promise<stri
   }
 }
 
-const SUPPORTED_MESSAGE_TYPES = new Set(["text", "image", "audio"]);
+const SUPPORTED_MESSAGE_TYPES = new Set(["text", "image", "audio", "file"]);
 
 export const lineAdapter: ChannelAdapter = {
   channelType: "line",
@@ -146,7 +146,35 @@ async function getGroupMemberCount(groupId: string): Promise<number | null> {
   }
 }
 
-// Enrich a normalized event with image/audio content (async fetch from LINE Content API)
+// Extract text from a PDF buffer using pdf-parse or fallback to image conversion
+async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
+  try {
+    // Use OpenAI to read the PDF as images (convert pages to base64 images)
+    // PDF.js is heavy, so we send the file to OpenAI's file API for extraction
+    const { getOpenAI } = await import("../llm/client");
+    const file = new File([buffer], "document.pdf", { type: "application/pdf" });
+    const response = await getOpenAI().chat.completions.create({
+      model: "gpt-5.4-mini",
+      messages: [
+        { role: "system", content: "添付されたPDFの内容をできるだけ正確に文字起こししてください。表やレイアウトも可能な範囲でテキストとして再現してください。" },
+        {
+          role: "user",
+          content: [
+            { type: "file", file: { file_data: `data:application/pdf;base64,${Buffer.from(buffer).toString("base64")}`, filename: "document.pdf" } },
+            { type: "text", text: "このPDFの内容を読み取ってください。" },
+          ] as never,
+        },
+      ],
+      max_completion_tokens: 4096,
+    });
+    return response.choices[0]?.message?.content || "";
+  } catch (err) {
+    console.warn("PDF extraction failed:", err instanceof Error ? err.message : err);
+    return "";
+  }
+}
+
+// Enrich a normalized event with image/audio/file content (async fetch from LINE Content API)
 async function enrichLineEvent(event: NormalizedMessageEvent): Promise<NormalizedMessageEvent> {
   const rawEvent = event.rawEvent as LineEvent;
   const msgType = rawEvent.message?.type;
@@ -165,6 +193,30 @@ async function enrichLineEvent(event: NormalizedMessageEvent): Promise<Normalize
     if (dataUrl) {
       event.audioUrl = dataUrl;
       if (!event.text) event.text = "[音声メッセージ]";
+    }
+  } else if (msgType === "file") {
+    const fileName = rawEvent.message?.fileName || "";
+    if (fileName.toLowerCase().endsWith(".pdf")) {
+      try {
+        const res = await fetch(
+          `https://api-data.line.me/v2/bot/message/${msgId}/content`,
+          { headers: { Authorization: `Bearer ${getAccessToken()}` } }
+        );
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const pdfText = await extractPdfText(buffer);
+          if (pdfText) {
+            event.text = `[PDF: ${fileName}]\n${pdfText}`;
+          } else {
+            event.text = `[PDF: ${fileName}（読み取れませんでした）]`;
+          }
+        }
+      } catch (err) {
+        console.warn("PDF fetch failed:", err instanceof Error ? err.message : err);
+        event.text = `[PDF: ${fileName}（取得に失敗しました）]`;
+      }
+    } else {
+      event.text = `[ファイル: ${fileName}]`;
     }
   }
 
