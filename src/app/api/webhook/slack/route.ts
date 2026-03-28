@@ -42,11 +42,7 @@ export async function POST(request: NextRequest) {
         channel_type: body.event.channel_type,
       }));
 
-      // Ignore bot messages (but not app_mention from users)
-      if ((body.event.bot_id || body.event.subtype) && body.event.type !== "app_mention") {
-        console.log("Slack: ignoring bot/subtype message");
-        return NextResponse.json({ ok: true });
-      }
+      // bot/subtype filtering is handled inside normalizeEvents
 
       const events = slackAdapter.normalizeEvents(body);
       console.log("Slack: normalized", events.length, "events");
