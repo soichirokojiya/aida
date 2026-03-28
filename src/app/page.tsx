@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LineMock, FAMILY_CHAT, DM_CONSULT_CHAT } from "@/components/line-mock";
 import { SlackMock, SLACK_BUSINESS_CHAT } from "@/components/slack-mock";
+import { PlatformTabs } from "@/components/platform-tabs";
 
 const LINE_ADD_URL = "https://lin.ee/nHtneAR";
 const SLACK_INSTALL_URL = "/api/slack/install";
@@ -405,58 +406,78 @@ export default function LandingPage() {
           <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-4">
             料金
           </h2>
-          <p className="text-center text-gray-500 text-base mb-3">
-            最初の1ヶ月はDMもグループも無料で使えます
-          </p>
-          <p className="text-center text-sm text-gray-400 mb-10">
-            LINE・Slack共通の料金プランです
+          <p className="text-center text-gray-500 text-base mb-8">
+            最初の1ヶ月は無料で使えます
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* DM */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <p className="text-teal-600 font-medium text-sm mb-1">パーソナルプラン</p>
-              <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
-              <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
-              <ul className="space-y-2 text-base text-gray-600 mb-5">
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>伝え方の相談</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>言い換え・要約</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>モヤモヤの整理</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>回数無制限</li>
-              </ul>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#06C755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4A154B"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.27 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.163 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.163 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.163 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.27a2.527 2.527 0 0 1-2.52-2.523 2.527 2.527 0 0 1 2.52-2.52h6.315A2.528 2.528 0 0 1 24 15.163a2.528 2.528 0 0 1-2.522 2.523h-6.315z" /></svg>
-                <span>LINE・Slack どちらでも利用可</span>
+          <PlatformTabs
+            lineContent={
+              <div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                    <p className="text-[#06C755] font-medium text-sm mb-1">パーソナルプラン</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
+                    <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
+                    <ul className="space-y-2 text-base text-gray-600 mb-5">
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>伝え方の相談</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>言い換え・要約</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>モヤモヤの整理</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>画像・音声・PDF読み取り</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>回数無制限</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 border border-[#06C755]/30 shadow-sm">
+                    <p className="text-[#06C755] font-medium text-sm mb-1">LINEグループプラン</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1グループ</span></p>
+                    <p className="text-gray-500 text-sm mb-5">LINEグループにうめこを招待</p>
+                    <ul className="space-y-2 text-base text-gray-600 mb-5">
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>会話の見守り・整理</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>自動介入</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>1人が払えばグループ全員使える</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>回数無制限</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="text-center mt-8">
+                  <LineButton size="sm">LINEで無料で始める</LineButton>
+                  <p className="mt-3 text-sm text-gray-500">いつでも解約OK・DMとグループは独立して契約できます</p>
+                </div>
               </div>
-            </div>
-
-            {/* グループ */}
-            <div className="bg-white rounded-2xl p-6 border border-teal-200 shadow-sm">
-              <p className="text-teal-600 font-medium text-sm mb-1">グループ・チャンネルプラン</p>
-              <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1グループ</span></p>
-              <p className="text-gray-500 text-sm mb-5">LINEグループ or Slackチャンネルにうめこを招待</p>
-              <ul className="space-y-2 text-base text-gray-600 mb-5">
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>会話の見守り・整理</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>自動介入</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>1人が払えばグループ全員使える</li>
-                <li className="flex gap-2"><span className="text-teal-500">&#10003;</span>回数無制限</li>
-              </ul>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#06C755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" /></svg>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="#4A154B"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.27 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.163 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.163 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.163 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.27a2.527 2.527 0 0 1-2.52-2.523 2.527 2.527 0 0 1 2.52-2.52h6.315A2.528 2.528 0 0 1 24 15.163a2.528 2.528 0 0 1-2.522 2.523h-6.315z" /></svg>
-                <span>LINE・Slack どちらでも利用可</span>
+            }
+            slackContent={
+              <div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+                    <p className="text-[#4A154B] font-medium text-sm mb-1">パーソナルプラン</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
+                    <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
+                    <ul className="space-y-2 text-base text-gray-600 mb-5">
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>伝え方の相談</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>言い換え・要約</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>モヤモヤの整理</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>画像・PDF読み取り</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>回数無制限</li>
+                    </ul>
+                  </div>
+                  <div className="bg-white rounded-2xl p-6 border border-[#4A154B]/30 shadow-sm">
+                    <p className="text-[#4A154B] font-medium text-sm mb-1">チャンネルプラン</p>
+                    <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1チャンネル</span></p>
+                    <p className="text-gray-500 text-sm mb-5">Slackチャンネルにうめこを招待</p>
+                    <ul className="space-y-2 text-base text-gray-600 mb-5">
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>会話の見守り・整理</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>自動介入</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>1人が払えばチャンネル全員使える</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>回数無制限</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="text-center mt-8">
+                  <SlackButton size="sm">Slackに追加する</SlackButton>
+                  <p className="mt-3 text-sm text-gray-500">いつでも解約OK・DMとチャンネルは独立して契約できます</p>
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div className="text-center mt-8">
-            <div className="flex flex-wrap justify-center gap-3">
-              <LineButton size="sm">LINEで無料で始める</LineButton>
-              <SlackButton size="sm">Slackに追加する</SlackButton>
-            </div>
-            <p className="mt-3 text-sm text-gray-500">いつでも解約OK・DMとグループは独立して契約できます</p>
-          </div>
+            }
+          />
         </div>
       </section>
 
@@ -523,7 +544,7 @@ export default function LandingPage() {
               },
               {
                 q: "LINEとSlack、どちらでも使えますか？",
-                a: "はい。LINEでもSlackでも同じように使えます。料金プランも共通です。お使いの環境に合わせてお選びください。",
+                a: "はい。「うめこ LINE」と「うめこ for Slack」の2つのサービスがあります。どちらも同じうめこですが、それぞれ独立したサービスで、料金も別々です。両方使いたい場合はそれぞれの登録が必要です。",
               },
             ].map((item, i) => (
               <div key={i} className="border-b border-gray-200 pb-6">
