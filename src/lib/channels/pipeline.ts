@@ -749,7 +749,15 @@ complex: うめこが丁寧に考えて答えるべき内容か？
       const stage = interventionCount === 0
         ? "（1回目の介入。軽く受け止めるだけ。「ここ大事な話だね」くらいの温度で）"
         : "（2回目の介入。前回入ったのに続いてる。クールダウンを提案して。「この話、少し時間置いた方がいいかも」くらいの温度で）";
-      responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stage);
+      try {
+        responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stage);
+      } catch (err) {
+        console.error("generateMediation error:", err instanceof Error ? err.message : err);
+        responseText = "ちょっと待って。大事な話をしてるのは伝わってるよ。少し落ち着いてから、ひとつずつ整理してみない？";
+      }
+      if (!responseText) {
+        responseText = "ちょっと待って。大事な話をしてるのは伝わってるよ。少し落ち着いてから、ひとつずつ整理してみない？";
+      }
       triggerType = "auto_mediation";
     }
   }
