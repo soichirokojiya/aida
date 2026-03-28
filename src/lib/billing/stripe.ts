@@ -21,12 +21,14 @@ const SLACK_CHANNEL_PRICE_ID = process.env.STRIPE_SLACK_CHANNEL_PRICE_ID || GROU
 
 export async function createDmCheckoutUrl(lineUserId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta = { lineUserId, type: "dm", channel: "line" };
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: DM_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=dm`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { lineUserId, type: "dm", channel: "line" },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
   return session.url!;
@@ -34,12 +36,14 @@ export async function createDmCheckoutUrl(lineUserId: string): Promise<string> {
 
 export async function createGroupCheckoutUrl(lineUserId: string, groupId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta = { lineUserId, groupId, type: "group", channel: "line" };
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: GROUP_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=group`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { lineUserId, groupId, type: "group", channel: "line" },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
   return session.url!;
@@ -49,12 +53,14 @@ export async function createGroupCheckoutUrl(lineUserId: string, groupId: string
 
 export async function createSlackDmCheckoutUrl(slackUserId: string, teamId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta = { slackUserId, teamId, type: "dm", channel: "slack" };
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: SLACK_DM_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=slack_dm`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { slackUserId, teamId, type: "dm", channel: "slack" },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
   return session.url!;
@@ -62,12 +68,14 @@ export async function createSlackDmCheckoutUrl(slackUserId: string, teamId: stri
 
 export async function createSlackChannelCheckoutUrl(slackUserId: string, teamId: string, channelId: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta = { slackUserId, teamId, channelId, type: "channel", channel: "slack" };
   const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: SLACK_CHANNEL_PRICE_ID, quantity: 1 }],
     success_url: `${baseUrl}/billing/success?type=slack_channel`,
     cancel_url: `${baseUrl}/billing/cancel`,
-    metadata: { slackUserId, teamId, channelId, type: "channel", channel: "slack" },
+    metadata: meta,
+    subscription_data: { metadata: meta },
     allow_promotion_codes: true,
   });
   return session.url!;

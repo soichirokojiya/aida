@@ -169,15 +169,20 @@ export async function webSearchCompletion(
 ): Promise<string> {
   const model = selectModel(ctx.purpose);
   const start = Date.now();
-  const text = await responsesApi({
-    model,
-    instructions: systemPrompt,
-    tools: [{ type: "web_search_preview" }],
-    input: userMessage,
-  });
-  const elapsed = Date.now() - start;
-  trackUsage(ctx, model, undefined, elapsed);
-  return text;
+  try {
+    const text = await responsesApi({
+      model,
+      instructions: systemPrompt,
+      tools: [{ type: "web_search_preview" }],
+      input: userMessage,
+    });
+    const elapsed = Date.now() - start;
+    trackUsage(ctx, model, undefined, elapsed);
+    return text || "";
+  } catch (err) {
+    console.warn("webSearchCompletion failed:", err instanceof Error ? err.message : err);
+    return "";
+  }
 }
 
 export async function chatCompletionJson<T>(

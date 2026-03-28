@@ -348,23 +348,35 @@ async function handleDirectMessage(
   }
 
   // 2. Check for cancellation/contract management request (skip for file/image/audio content)
-  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:");
+  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:");
   const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
   if (!isMediaMessage && cancelKeywords.test(event.text)) {
-    const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
-    const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+    let subId: string | undefined;
 
-    const subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId;
+    if (event.channelType === "slack") {
+      const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
+      const slackDmSub = await prisma.slackDmSubscription.findUnique({
+        where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } },
+      });
+      subId = slackDmSub?.stripeSubscriptionId || undefined;
+    } else {
+      const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
+      const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+      subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId || undefined;
+    }
+
     if (subId) {
       const { createPortalUrl } = await import("../billing/portal");
       const portalUrl = await createPortalUrl(subId);
       if (portalUrl) {
         await saveMessage(conversation.id, event, "normal", 0);
-        await sendResponse(adapter, event, `わかったよ。ここから手続きできるよ。\n\n▼ 契約管理ページ\n${portalUrl}\n\nブロックだけでは課金は止まらないから、ここから手続きしてね。`);
+        const cancelNote = event.channelType === "slack"
+          ? "アンインストールだけでは課金は止まらないから、ここから手続きしてね。"
+          : "ブロックだけでは課金は止まらないから、ここから手続きしてね。";
+        await sendResponse(adapter, event, `わかったよ。ここから手続きできるよ。\n\n▼ 契約管理ページ\n${portalUrl}\n\n${cancelNote}`);
         return;
       }
     }
-    // No subscription found - still provide guidance
     await saveMessage(conversation.id, event, "normal", 0);
     await sendResponse(adapter, event, `今は有料プランに登録されていない状態だよ。\n\nもし何か困っていることがあれば、info@cfac.co.jp に連絡してみてね。`);
     return;
@@ -425,11 +437,18 @@ async function handleDirectMessage(
     }
 
     case "search_request": {
+      const { formatted: recentForSearch } = await getRecentMessages(conversation.id, 5);
+      const searchContext = recentForSearch.length > 1
+        ? `直近の会話:\n${recentForSearch.slice(0, -1).join("\n")}\n\n`
+        : "";
       responseText = await webSearchCompletion(
         CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
-        event.text,
+        `${searchContext}ユーザー: ${event.text}`,
         { purpose: "chat" }
       );
+      if (!responseText) {
+        responseText = "ごめんね、今ちょっと検索がうまくいかなかったみたい。もう一度試してもらえるとうれしいです。";
+      }
       break;
     }
 
@@ -520,19 +539,32 @@ async function handleGroupMessage(
   }
 
   // 2. Check for cancellation request in group (skip for file/image/audio content)
-  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:");
+  const isMediaMessage = event.text.startsWith("[PDF:") || event.text.startsWith("[画像]") || event.text.startsWith("[スタンプ") || event.text.startsWith("[ファイル:") || event.text.startsWith("[文書:") || event.text.startsWith("[表計算:");
   const cancelKeywords = /解約|退会|やめたい|キャンセル|cancel|契約.*見直|契約.*変更|解約.*仕方|解約.*方法|プラン.*変更|支払い.*止/i;
   if (!isMediaMessage && cancelKeywords.test(event.text)) {
-    const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
-    const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+    let subId: string | undefined;
 
-    const subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId;
+    if (event.channelType === "slack") {
+      const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
+      const slackDmSub = await prisma.slackDmSubscription.findUnique({
+        where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } },
+      });
+      const slackChannelSub = await prisma.slackChannelSubscription.findFirst({
+        where: { payerSlackUserId: event.senderId, status: "active" },
+      });
+      subId = slackDmSub?.stripeSubscriptionId || slackChannelSub?.stripeSubscriptionId || undefined;
+    } else {
+      const dmSub = await prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } });
+      const groupSubs = await prisma.groupSubscription.findMany({ where: { payerLineUserId: event.senderId, status: "active" } });
+      subId = dmSub?.stripeSubscriptionId || groupSubs[0]?.stripeSubscriptionId || undefined;
+    }
+
     if (subId) {
       const { createPortalUrl } = await import("../billing/portal");
       const portalUrl = await createPortalUrl(subId);
       if (portalUrl) {
         await saveMessage(conversation.id, event, "normal", 0);
-        await sendResponse(adapter, event, `わかったよ。ここから手続きできるよ。\n\n▼ 契約管理ページ\n${portalUrl}\n\nブロックだけでは課金は止まらないから、ここから手続きしてね。`);
+        await sendResponse(adapter, event, `わかったよ。ここから手続きできるよ。\n\n▼ 契約管理ページ\n${portalUrl}`);
         return;
       }
     }
@@ -648,9 +680,12 @@ complex: うめこが丁寧に考えて答えるべき内容か？
       case "search_request": {
         responseText = await webSearchCompletion(
           CHAT_SYSTEM_PROMPT + `\n\n${groupContext}`,
-          textForProcessing,
+          `直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新メッセージ: ${textForProcessing}`,
           { purpose: "chat" }
         );
+        if (!responseText) {
+          responseText = "ごめんね、検索がうまくいかなかったみたい。もう一度試してもらえる？";
+        }
         break;
       }
 
