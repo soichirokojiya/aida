@@ -10,7 +10,7 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
-const MODEL_MINI = process.env.OPENAI_MODEL_MINI || "gpt-4o-mini";
+const MODEL_MINI = process.env.OPENAI_MODEL_MINI || "gpt-5.4-mini";
 const MODEL_FULL = process.env.OPENAI_MODEL_FULL || "gpt-5.4";
 
 // Purposes that require deeper reasoning → full model

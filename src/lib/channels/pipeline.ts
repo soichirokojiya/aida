@@ -408,6 +408,19 @@ async function handleDirectMessage(
     }
 
     default: {
+      // Classify complexity to route model
+      const complexity = await chatCompletionJson<{ complex: boolean }>(
+        `ユーザーのメッセージが、丁寧に考えて答えるべき内容かを判定してJSON形式で返してください。
+
+complex: true の例 → 相談、悩み、人間関係、感情的な内容、伝え方の相談、モヤモヤの整理
+complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹介を聞く
+
+{"complex": true/false}`,
+        event.text,
+        { purpose: "intent" }
+      );
+      const chatPurpose = complexity.complex ? "chat" : "chat_simple";
+
       // Normal conversation with memory
       const [{ formatted: recentMsgs }, memory] = await Promise.all([
         getRecentMessages(conversation.id, 10),
@@ -423,7 +436,8 @@ async function handleDirectMessage(
 
       responseText = await chatCompletion(
         CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
-        `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`
+        `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
+        { purpose: chatPurpose }
       );
       break;
     }
