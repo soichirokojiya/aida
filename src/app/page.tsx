@@ -65,7 +65,7 @@ export default function LandingPage() {
         <div className="absolute bottom-0 -right-40 w-96 h-96 bg-sky-200/20 rounded-full blur-3xl" />
 
         <div className="relative max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-12 items-start">
             <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/umeko-logo.png" alt="うめこ" className="w-16 h-16 rounded-2xl shadow-md mb-6" />
