@@ -21,7 +21,7 @@ function getJapanTimeContext(): string {
   const jst = new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo", hour: "numeric", hour12: false });
   const hour = parseInt(jst, 10);
   const greeting = hour < 5 ? "深夜" : hour < 10 ? "朝" : hour < 12 ? "午前中" : hour < 17 ? "午後" : hour < 21 ? "夜" : "夜遅く";
-  return `（現在の日本時間: ${hour}時頃、${greeting}。挨拶はこの時間帯に合わせること）`;
+  return `（現在の日本時間: ${hour}時頃、${greeting}。挨拶はこの時間帯に合わせる。ただし日時や時刻を出力に含めないこと）`;
 }
 const BOT_NAME_PATTERNS = [/うめこ/, /ウメコ/, /梅子/, /umeko/i];
 
