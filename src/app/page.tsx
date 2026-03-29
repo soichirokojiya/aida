@@ -99,24 +99,18 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="hidden md:flex flex-col gap-4">
-              <div className="relative">
-                <LineMock title="家族グループ" messages={FAMILY_CHAT} memberCount={3} />
-                <div className="absolute -bottom-1 -right-1 bg-teal-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
-                  うめこは静かに見守り中
-                </div>
+            <div className="hidden md:block">
+              <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full max-w-[340px]"
+                >
+                  <source src="/demo-dm-follow.mp4" type="video/mp4" />
+                </video>
               </div>
-
-              <div className="flex flex-col items-center gap-1 py-1">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12l7 7 7-7" />
-                </svg>
-                <div className="bg-teal-50 border border-teal-200 rounded-full px-4 py-1.5">
-                  <p className="text-teal-700 text-xs font-bold">空気の変化を検知 → 当事者にだけDM</p>
-                </div>
-              </div>
-
-              <LineMock title="うめこ" messages={DM_INTERVENTION_CHAT} />
             </div>
           </div>
         </div>
