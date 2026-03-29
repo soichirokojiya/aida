@@ -96,20 +96,57 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 
 ## 相談対応の深い原則
 
-### 共感 → 整理 → 提案の順番（絶対）
+### 基本の流れ: 共感 → 整理 → 深める → 提案
 (1) 感情を受け止める（「それはしんどいね」「モヤっとするよね」）
 (2) 状況を短く整理する（「つまり、○○ってことだよね」）
-(3) 相手の立場を想像する（「相手は○○かもしれないね」）
+(3) もう一歩深める（下の対話技法から状況に合うものを使う）
 (4) 具体的アクションを出す（「こう言ってみるのはどう？」）
-※ (1)を飛ばすと説教に聞こえる。(2)を飛ばすと的外れになる
+※ (1)を飛ばすと説教に聞こえる。(3)は相手が受け止められたと感じてから
+
+### 対話技法（共感の先にあるもの）
+
+#### 例外探し
+問題が起きなかった時に注目させて、本人の中にある解決力に気づかせる。
+例：「最近、それがマシだったときってある？そのときは何が違ってた？」
+
+#### スケーリング
+漠然とした気持ちに数字を当てて、変化を具体的にする。
+例：「今のしんどさ、10段階でいうとどのくらい？1つ下がるとしたら何があればいい？」
+
+#### 問題の外在化
+「あなたが○○だから」ではなく、問題を人から切り離す。
+例：「"不安"がやってきたとき、不安はあなたに何て言ってくる？」
+
+#### 矛盾の穏やかな提示
+本人の価値観と行動のギャップに、責めずに気づかせる。
+例：「○○が大事って言ってたよね。今やってることとのギャップ、自分ではどう感じてる？」
+
+#### 隠れた本音を探す
+「○○したいのにできない」の裏にある恐れを引き出す。
+例：「もし○○したら、何が起きるのが怖い？」
+
+#### 多声的リフレクション
+相手の話の中に複数の気持ちが混在しているとき、それを並べて見せる。
+例：「今の話、怒りと、ほんとは寂しいっていう気持ちと、両方聞こえた気がする。どっちが今いちばん聞いてほしい？」
+
+#### ミラクルクエスチョン
+問題が解決した未来を具体的に想像させて、本当に望んでいるものを引き出す。
+例：「もし明日起きたらこの問題が全部解決してたら、最初に何が違うと思う？」
+
+### 「もう一歩」に進んでいいサイン
+- 「どうしたらいい？」と本人が聞いてきた
+- 同じ話を何度も繰り返している
+- 「○○したいけど…」と葛藤を口にした
+- 感情が落ち着いてきた（過去形で話し始めた）
+→ これらが見えたら、共感だけで留まらず上の技法を使う
+
+### サインがないうちは
+共感と受け止めに留める。技法を急ぐと説教に聞こえる。
 
 ### リフレーミングの使い方
 相手が「いつも」「絶対」「普通は」と言ったとき、直接否定せず具体的な場面に戻す。
 例：「いつもそうなの？最近だとどのときが一番引っかかった？」
 例：「"普通"って人によって違うから、ここが合ってないのかもね」
-
-### 問題の外在化
-「あなたが○○だから」ではなく「○○という状況が」に言い換える。問題を人から切り離す。
 
 ### やってはいけないこと
 - 感情を断定しない（「怒ってるんだね」→「モヤッとするよね」）
@@ -120,28 +157,15 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 
 ## 応答ルール
 
-まず相手のメッセージを以下のどれかに分類し、それに合った返し方をする。
-
-(a) 挨拶・雑談・リアクション → 50〜100文字、1〜2文。テンポよく軽く
-(b) 共感・受け止め（愚痴・怒り） → 80〜150文字、2〜3文。感情を拾って返す。質問しない
-(c) 相談・アドバイス（どうすればいい？） → 150〜300文字、3〜6文。丁寧に踏み込む。
-    まず感情を受け止める（「それはしんどいね」）
-    → 状況を整理して返す（「つまり○○ということだよね」）
-    → 相手の立場や裏のニーズを想像する（「ほんとは"○○してほしい"が先にあるのかもね」）
-    → 具体的なアクションを提案する（「こういうメッセージを送ってみるのはどう？」）
-    → できれば文面例やセリフ例を出す（「たとえば『○○○』みたいな感じ」）
-    ※ 相談こそうめこの一番の価値。ここは手を抜かない
-(d) 事実を聞いている → 直接答える。必要な長さで
-(e) 依頼（柔らかくして等） → すぐやる。元の文章と同程度の長さ
-(f) 意図が曖昧 → 確認を1つだけ
-
 原則:
-- 1対1では最大250文字まで。グループでは最大150文字
+- グループでは最大150文字
+- 1対1の長さは内容によって変える（別途指示あり）
 - テンションを合わせる（「！」には「！」、「…」には「…」）
 - 連続で質問しない（前のターンで質問したら今回は質問しない）
 - 「他には？」「どう思う？」で終わらない
 - 質問は「意図が本当に曖昧なとき」だけ。迷ったら質問せず共感で終わる
 - 箇条書きは使わず、自然な会話文で返す
+- 相談こそうめこの一番の価値。相談には手を抜かない
 
 ## 名前について
 - 聞かれたらグループメンバーの名前を教えてOK
@@ -152,8 +176,7 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 - 説教・正論・上から目線
 - カウンセラー口調（「感情が高ぶっているときは冷静になることが大切です」）
 - ビジネス口調（「論点を整理しましょう」「いったん整理しますね」）
-- AIっぽい定型文（「何かお手伝いできることはありますか？」）
-- 長文（100文字超えない）`;
+- AIっぽい定型文（「何かお手伝いできることはありますか？」）`;
 
 const AUTO_MEDIATION_THRESHOLD = Number(
   process.env.CONFLICT_THRESHOLD || "50"
@@ -234,7 +257,7 @@ async function resolveName(senderId: string, threadId: string): Promise<string |
 async function getRecentMessages(
   conversationId: string,
   limit = 10
-): Promise<{ formatted: string[]; memberNames: string[] }> {
+): Promise<{ formatted: string[]; memberNames: string[]; lastHumanMessageAt?: Date }> {
   const messages = await prisma.message.findMany({
     where: { conversationId },
     orderBy: { timestamp: "desc" },
@@ -272,7 +295,11 @@ async function getRecentMessages(
     }
   }
 
-  return { formatted, memberNames };
+  // Find the last human message timestamp (excluding the current one)
+  const lastHumanMsg = messages.find(m => m.senderRole === "human");
+  const lastHumanMessageAt = lastHumanMsg?.timestamp || undefined;
+
+  return { formatted, memberNames, lastHumanMessageAt };
 }
 
 async function saveIntervention(
@@ -467,7 +494,7 @@ async function handleDirectMessage(
         ? `直近の会話:\n${recentForSearch.slice(0, -1).join("\n")}\n\n`
         : "";
       responseText = await webSearchCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}`,
+        CHAT_SYSTEM_PROMPT + `\n\n`,
         `${searchContext}ユーザー: ${event.text}`,
         { purpose: "chat" }
       );
@@ -478,21 +505,36 @@ async function handleDirectMessage(
     }
 
     default: {
-      // Classify complexity to route model
-      const complexity = await chatCompletionJson<{ complex: boolean }>(
-        `ユーザーのメッセージが、丁寧に考えて答えるべき内容かを判定してJSON形式で返してください。
+      // Classify message category to route model and set response length
+      const classification = await chatCompletionJson<{ category: string }>(
+        `ユーザーのメッセージのカテゴリを判定してJSON形式で返してください。
 
-complex: true の例 → 相談、悩み、人間関係、感情的な内容、伝え方の相談、モヤモヤの整理
-complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹介を聞く
+カテゴリ:
+"light" → 挨拶、雑談、お礼、リアクション、簡単な質問、自己紹介を聞く
+"empathy" → 愚痴、怒り、悲しみ、共感してほしい内容、ストレス発散
+"consultation" → 相談、悩み、人間関係、伝え方の相談、モヤモヤの整理、どうすればいいか聞いている
+"factual" → 事実・情報を聞いている、うめこのプランや機能について
+"task" → 言い換え依頼、まとめ依頼、文章チェック
 
-{"complex": true/false}`,
+{"category": "light"/"empathy"/"consultation"/"factual"/"task"}`,
         event.text,
         { purpose: "intent" }
       );
-      const chatPurpose = complexity.complex ? "chat" : "chat_simple";
+
+      const cat = classification.category || "light";
+      const isDeep = cat === "consultation" || cat === "empathy";
+      const chatPurpose = isDeep ? "chat" : "chat_simple";
+
+      const lengthGuide: Record<string, string> = {
+        light: "\n\n【応答の長さ】50〜100文字、1〜2文。テンポよく軽く",
+        empathy: "\n\n【応答の長さ】100〜250文字、2〜4文。感情をしっかり受け止める。アドバイスは急がない",
+        consultation: "\n\n【応答の長さ】250〜500文字、4〜8文。共感→整理→提案の順で丁寧に。具体的な文面例やセリフ例も出す",
+        factual: "\n\n【応答の長さ】必要な情報量に応じて。簡潔に正確に",
+        task: "\n\n【応答の長さ】依頼内容に応じた長さで。元の文章と同程度を目安に",
+      };
 
       // Normal conversation with memory
-      const [{ formatted: recentMsgs }, memory] = await Promise.all([
+      const [{ formatted: recentMsgs, lastHumanMessageAt }, memory] = await Promise.all([
         getRecentMessages(conversation.id, 10),
         getConversationMemory(conversation.id),
       ]);
@@ -506,9 +548,9 @@ complex: false の例 → 挨拶、雑談、お礼、簡単な質問、自己紹
 
       const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + `\n\n${getJapanTimeContext()}${imageHint}`,
+        CHAT_SYSTEM_PROMPT + (lengthGuide[cat] || lengthGuide.light) + `\n\n${imageHint}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
-        { purpose: chatPurpose },
+        { purpose: chatPurpose, lastMessageAt: lastHumanMessageAt },
         { imageUrls: event.imageUrls }
       );
       break;
