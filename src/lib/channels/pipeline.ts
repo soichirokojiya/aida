@@ -294,6 +294,47 @@ async function getRecentMessages(
   return { formatted, memberNames, lastHumanMessageAt };
 }
 
+// Get recent human sender IDs (for DM intervention targeting)
+async function getRecentSenderIds(conversationId: string, limit = 5): Promise<string[]> {
+  const messages = await prisma.message.findMany({
+    where: { conversationId, senderRole: "human" },
+    orderBy: { timestamp: "desc" },
+    take: limit,
+    select: { senderId: true },
+  });
+  // Return unique sender IDs, most recent first
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const m of messages) {
+    if (!seen.has(m.senderId)) {
+      seen.add(m.senderId);
+      result.push(m.senderId);
+    }
+  }
+  return result;
+}
+
+// Try to send DM to a user. Returns true if successful.
+async function trySendDm(
+  adapter: ChannelAdapter,
+  userId: string,
+  text: string,
+  channelType: string
+): Promise<boolean> {
+  try {
+    if (channelType === "line") {
+      // LINE: can only DM users who have added the bot as a friend
+      const lineUser = await prisma.lineUser.findUnique({ where: { lineUserId: userId } });
+      if (!lineUser || lineUser.unfollowedAt) return false; // Not a friend
+    }
+    await adapter.sendPush(userId, text);
+    return true;
+  } catch (err) {
+    console.warn(`DM send failed to ${userId.slice(0, 8)}:`, err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
 async function saveIntervention(
   conversationId: string,
   messageId: string,
@@ -736,24 +777,50 @@ async function handleGroupMessage(
     const canIntervene = await shouldIntervene(conversation.id, judgment.severity);
 
     if (canIntervene) {
-      // ── Layer 3: Generate intervention (gpt-5.4) ──
+      // ── Layer 3: Generate intervention via DM to parties ──
+      const dmHint = "あなたはグループの会話を見守っている「うめこ」です。\n当事者にDMで話しかけています。グループには出しません。\n相手の言い方がきつく伝わっている可能性があること、こう言い換えると伝わりやすいかもしれないこと、を自然な口調で提案してください。\n150文字以内。「次の一言の提案」に徹する。";
       const stageHint = judgment.severity === "high"
-        ? "（深刻な状況。落ち着いて、でもしっかり受け止める。必要なら「ここは一度、少し時間を置こう」と提案）"
-        : "（軽く受け止める。「大事な話だね」くらいの温度で、論点を整理する）";
+        ? "（深刻な状況。いったん返信を止めて時間を置くことを提案）"
+        : "（軽めの提案。「こう言い換えると伝わりやすいかも」くらい）";
+
       try {
-        responseText = await generateMediation(recentMessages, conversation.contextType, groupContext + " " + stageHint);
+        responseText = await generateMediation(recentMessages, conversation.contextType, dmHint + " " + stageHint);
       } catch (err) {
         console.error("generateMediation error:", err instanceof Error ? err.message : err);
       }
       if (!responseText) {
-        responseText = "ちょっと待って。大事な話をしてるのは伝わってるよ。少し落ち着いてから、ひとつずつ整理してみない？";
+        responseText = "少し強く伝わってるかも。返信する前に、ちょっとだけ整えてみない？";
       }
+
+      const cleanedDm = cleanLlmOutput(responseText);
       triggerType = "auto_mediation";
+
+      // Try to DM the recent participants (not the group)
+      const senderIds = await getRecentSenderIds(conversation.id, 5);
+      let dmSent = false;
+
+      for (const senderId of senderIds) {
+        const sent = await trySendDm(adapter, senderId, cleanedDm, event.channelType);
+        if (sent) dmSent = true;
+      }
+
+      // Fallback: if no DM could be sent, post in group
+      if (!dmSent) {
+        console.log(`DM intervention failed for all parties, falling back to group message`);
+        await sendResponse(adapter, event, cleanedDm);
+      }
+
+      // Save bot message and intervention
+      await saveBotMessage(conversation.id, cleanedDm);
+      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason + (dmSent ? " [DM]" : " [group-fallback]"), cleanedDm);
 
       // Update group relationship memory in background
       import("../memory/profile").then(m =>
-        m.updateGroupRelationship(conversation.id, recentMessages, responseText!)
+        m.updateGroupRelationship(conversation.id, recentMessages, cleanedDm)
       ).catch(() => {});
+
+      // Skip the normal send/save block below since we handled it here
+      return;
     }
   }
 
