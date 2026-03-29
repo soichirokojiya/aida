@@ -99,17 +99,18 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="hidden md:flex justify-center">
+            <div className="flex justify-center">
               <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200 max-w-[340px]">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video
                   autoPlay
                   loop
                   muted
                   playsInline
+                  preload="auto"
                   className="w-full"
-                >
-                  <source src="/demo-dm-follow.mp4" type="video/mp4" />
-                </video>
+                  src="/demo-dm-follow.mp4"
+                />
               </div>
             </div>
           </div>
