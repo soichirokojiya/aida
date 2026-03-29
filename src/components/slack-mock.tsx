@@ -41,9 +41,11 @@ function SlackBubble({ msg }: { msg: SlackMessage }) {
 export function SlackMock({
   channel,
   messages,
+  isDm,
 }: {
   channel: string;
   messages: SlackMessage[];
+  isDm?: boolean;
 }) {
   return (
     <div className="w-full max-w-[380px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-white">
@@ -57,7 +59,7 @@ export function SlackMock({
         </div>
       </div>
       <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-1.5">
-        <span className="text-gray-500 text-sm">#</span>
+        {!isDm && <span className="text-gray-500 text-sm">#</span>}
         <span className="text-sm font-bold text-gray-900">{channel}</span>
       </div>
 
@@ -79,13 +81,14 @@ export function SlackMock({
       {/* Input bar */}
       <div className="px-3 pb-3">
         <div className="border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-400">
-          #{channel} にメッセージを送信
+          {isDm ? `${channel} にメッセージを送信` : `#${channel} にメッセージを送信`}
         </div>
       </div>
     </div>
   );
 }
 
+// Channel chat where umeko stays silent
 export const SLACK_BUSINESS_CHAT: SlackMessage[] = [
   {
     sender: "right",
@@ -105,12 +108,16 @@ export const SLACK_BUSINESS_CHAT: SlackMessage[] = [
     text: "聞いてないです。いつもそうですよね、共有が後出しなんですよ",
     time: "14:23",
   },
+];
+
+// DM from umeko to the party
+export const SLACK_DM_INTERVENTION: SlackMessage[] = [
   {
     sender: "left",
     name: "うめこ",
     avatar: "/umeko-logo.png",
     isBot: true,
-    text: "ちょっと待って。\n「伝えたつもり」と「聞いてない」がぶつかってるね。\nまず、先週のMTGの議事録を一緒に確認してみない？事実ベースで整理しよう。",
+    text: "さっきの#開発チーム、少し強めに伝わってるかもしれません。\n「聞いてなかった」を「共有の仕方を決めませんか」に変えると、建設的に進みやすいかも",
     time: "14:24",
   },
 ];

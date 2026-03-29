@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LineMock, FAMILY_CHAT, DM_CONSULT_CHAT, DM_INTERVENTION_CHAT } from "@/components/line-mock";
-import { SlackMock, SLACK_BUSINESS_CHAT } from "@/components/slack-mock";
+import { SlackMock, SLACK_BUSINESS_CHAT, SLACK_DM_INTERVENTION } from "@/components/slack-mock";
 import { PlatformTabs } from "@/components/platform-tabs";
 
 const LINE_ADD_URL = "https://lin.ee/nHtneAR";
@@ -371,7 +371,23 @@ export default function LandingPage() {
                   </ul>
                 </div>
               </div>
-              <SlackMock channel="開発チーム" messages={SLACK_BUSINESS_CHAT} />
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <SlackMock channel="開発チーム" messages={SLACK_BUSINESS_CHAT} />
+                  <div className="absolute -bottom-1 -right-1 bg-[#4A154B] text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+                    うめこは静かに見守り中
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1 py-1">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A154B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                  </svg>
+                  <div className="bg-purple-50 border border-[#4A154B]/20 rounded-full px-4 py-1.5">
+                    <p className="text-[#4A154B] text-xs font-bold">空気の変化を検知 → 当事者にだけDM</p>
+                  </div>
+                </div>
+                <SlackMock channel="うめこ" messages={SLACK_DM_INTERVENTION} isDm />
+              </div>
             </div>
           </div>
         </div>
@@ -455,7 +471,7 @@ export default function LandingPage() {
               },
               {
                 q: "グループに入れたら、すべての会話に返信しますか？",
-                a: "いいえ。普段は静かに見守っていて、空気が悪くなりそうなときや「うめこ」と呼びかけられたときだけ反応します。",
+                a: "いいえ。普段は静かに見守っています。空気が変わったときは、グループ内ではなく当事者にだけDMで伝え方を提案します。「うめこ」と呼びかけたときはグループ内でも応答します。",
               },
               {
                 q: "無料期間が終わったらどうなりますか？",
