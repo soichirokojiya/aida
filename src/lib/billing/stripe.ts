@@ -81,6 +81,42 @@ export async function createSlackChannelCheckoutUrl(slackUserId: string, teamId:
   return session.url!;
 }
 
+// ── Unified plans ──
+const LINE_UNIFIED_PRICE_ID = process.env.STRIPE_LINE_UNIFIED_PRICE_ID || GROUP_PRICE_ID;
+const SLACK_UNIFIED_PRICE_ID = process.env.STRIPE_SLACK_UNIFIED_PRICE_ID || SLACK_CHANNEL_PRICE_ID;
+
+export async function createLineCheckoutUrl(lineUserId: string, groupId?: string): Promise<string> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta: Record<string, string> = { lineUserId, type: "unified", channel: "line" };
+  if (groupId) meta.groupId = groupId;
+  const session = await getStripe().checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: LINE_UNIFIED_PRICE_ID, quantity: 1 }],
+    success_url: `${baseUrl}/billing/success?type=line`,
+    cancel_url: `${baseUrl}/billing/cancel`,
+    metadata: meta,
+    subscription_data: { metadata: meta },
+    allow_promotion_codes: true,
+  });
+  return session.url!;
+}
+
+export async function createSlackCheckoutUrl(slackUserId: string, teamId: string, channelId?: string): Promise<string> {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://umeko.life";
+  const meta: Record<string, string> = { slackUserId, teamId, type: "unified", channel: "slack" };
+  if (channelId) meta.channelId = channelId;
+  const session = await getStripe().checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: SLACK_UNIFIED_PRICE_ID, quantity: 1 }],
+    success_url: `${baseUrl}/billing/success?type=slack`,
+    cancel_url: `${baseUrl}/billing/cancel`,
+    metadata: meta,
+    subscription_data: { metadata: meta },
+    allow_promotion_codes: true,
+  });
+  return session.url!;
+}
+
 // ── Webhook ──
 
 export interface WebhookResult {
@@ -94,8 +130,10 @@ export interface WebhookResult {
   teamId?: string;
   channelId?: string;
   // Common
-  subscriptionType?: "dm" | "group" | "channel";
+  subscriptionType?: "dm" | "group" | "channel" | "unified";
   stripeSubscriptionId?: string;
+  stripeStatus?: string;
+  currentPeriodEnd?: Date;
 }
 
 export async function handleWebhookEvent(
@@ -121,7 +159,7 @@ export async function handleWebhookEvent(
         slackUserId: meta.slackUserId,
         teamId: meta.teamId,
         channelId: meta.channelId,
-        subscriptionType: meta.type as "dm" | "group" | "channel",
+        subscriptionType: meta.type as "dm" | "group" | "channel" | "unified",
         stripeSubscriptionId: session.subscription as string,
       };
     }
@@ -136,8 +174,36 @@ export async function handleWebhookEvent(
         slackUserId: meta.slackUserId,
         teamId: meta.teamId,
         channelId: meta.channelId,
-        subscriptionType: meta.type as "dm" | "group" | "channel",
+        subscriptionType: meta.type as "dm" | "group" | "channel" | "unified",
         stripeSubscriptionId: sub.id,
+      };
+    }
+    case "customer.subscription.updated": {
+      const sub = event.data.object;
+      const periodEnd = sub.items?.data?.[0]?.current_period_end;
+      return {
+        type: "subscription_updated",
+        stripeSubscriptionId: sub.id,
+        stripeStatus: sub.status,
+        currentPeriodEnd: periodEnd
+          ? new Date(periodEnd * 1000)
+          : undefined,
+      };
+    }
+    case "invoice.paid":
+    case "invoice.payment_failed": {
+      const invoice = event.data.object;
+      const subDetail = invoice.parent?.subscription_details;
+      const subId = typeof subDetail?.subscription === "string"
+        ? subDetail.subscription
+        : subDetail?.subscription?.id;
+      const periodEnd = invoice.lines?.data?.[0]?.period?.end;
+      return {
+        type: event.type === "invoice.paid" ? "invoice_paid" : "invoice_payment_failed",
+        stripeSubscriptionId: subId || undefined,
+        currentPeriodEnd: event.type === "invoice.paid" && periodEnd
+          ? new Date(periodEnd * 1000)
+          : undefined,
       };
     }
     default:

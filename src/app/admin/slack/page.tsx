@@ -37,9 +37,9 @@ export default async function SlackAdminPage() {
     where: { channelType: "slack", externalThreadId: { startsWith: "D" } },
   });
 
-  // MRR
-  const dmMrr = activeDmSubs * 490;
-  const channelMrr = activeChannelSubs * 980;
+  // MRR (unified plan = 980)
+  const totalSubs = activeDmSubs + activeChannelSubs;
+  const slackMrr = totalSubs * 980;
 
   const now = new Date();
 
@@ -58,18 +58,14 @@ export default async function SlackAdminPage() {
           <p className="text-2xl font-bold">{slackUsers.length}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <p className="text-xs text-gray-500 mb-1">DM契約</p>
-          <p className="text-2xl font-bold">{activeDmSubs}</p>
-          <p className="text-xs text-gray-400 mt-1">¥{dmMrr.toLocaleString()}/月</p>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-gray-200">
-          <p className="text-xs text-gray-500 mb-1">チャンネル契約</p>
-          <p className="text-2xl font-bold">{activeChannelSubs}</p>
-          <p className="text-xs text-gray-400 mt-1">¥{channelMrr.toLocaleString()}/月</p>
+          <p className="text-xs text-gray-500 mb-1">契約数</p>
+          <p className="text-2xl font-bold">{totalSubs}</p>
+          <p className="text-xs text-gray-400 mt-1">DM {activeDmSubs} / CH {activeChannelSubs}</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-200">
           <p className="text-xs text-gray-500 mb-1">Slack MRR</p>
-          <p className="text-2xl font-bold">¥{(dmMrr + channelMrr).toLocaleString()}</p>
+          <p className="text-2xl font-bold">¥{slackMrr.toLocaleString()}</p>
+          <p className="text-xs text-gray-400 mt-1">¥980/月</p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-gray-200">
           <p className="text-xs text-gray-500 mb-1">チャンネル数</p>

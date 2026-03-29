@@ -371,65 +371,49 @@ export default function LandingPage() {
           <PlatformTabs
             lineContent={
               <div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                    <p className="text-[#06C755] font-medium text-sm mb-1">パーソナルプラン</p>
-                    <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
-                    <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
-                    <ul className="space-y-2 text-base text-gray-600">
-                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>伝え方の相談・言い換え・要約</li>
+                <div className="max-w-md mx-auto">
+                  <div className="bg-white rounded-2xl p-8 border border-[#06C755]/30 shadow-sm text-center">
+                    <p className="text-[#06C755] font-medium text-sm mb-1">うめこ LINE</p>
+                    <p className="text-4xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月</span></p>
+                    <p className="text-gray-500 text-sm mb-6">1対1の相談も、グループの見守りも、これ1つ</p>
+                    <ul className="space-y-2 text-base text-gray-600 text-left">
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>1対1で相談・言い換え・要約</li>
+                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>LINEグループの見守り・整理（1グループ含む）</li>
                       <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>画像・音声・PDF読み取り</li>
                       <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>Web検索</li>
                       <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>回数無制限</li>
-                    </ul>
-                  </div>
-                  <div className="bg-white rounded-2xl p-6 border border-[#06C755]/30 shadow-sm">
-                    <p className="text-[#06C755] font-medium text-sm mb-1">LINEグループプラン</p>
-                    <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1グループ</span></p>
-                    <p className="text-gray-500 text-sm mb-5">LINEグループにうめこを招待</p>
-                    <ul className="space-y-2 text-base text-gray-600">
-                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>会話の見守り・整理</li>
-                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>自動介入</li>
                       <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>1人が払えばグループ全員使える</li>
-                      <li className="flex gap-2"><span className="text-[#06C755]">&#10003;</span>回数無制限</li>
                     </ul>
+                    <p className="text-xs text-gray-400 mt-4">追加グループ: +¥490/月</p>
                   </div>
                 </div>
                 <div className="text-center mt-8">
                   <LineButton size="sm">LINEで気軽に始める</LineButton>
-                  <p className="mt-3 text-sm text-gray-400">いつでも解約OK・DMとグループは独立して契約できます</p>
+                  <p className="mt-3 text-sm text-gray-400">いつでも解約OK</p>
                 </div>
               </div>
             }
             slackContent={
               <div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-                    <p className="text-[#4A154B] font-medium text-sm mb-1">パーソナルプラン</p>
-                    <p className="text-3xl font-bold text-gray-800 mb-1">¥490<span className="text-base font-normal text-gray-500"> /月</span></p>
-                    <p className="text-gray-500 text-sm mb-5">1対1でうめこと話せます</p>
-                    <ul className="space-y-2 text-base text-gray-600">
-                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>伝え方の相談・言い換え・要約</li>
+                <div className="max-w-md mx-auto">
+                  <div className="bg-white rounded-2xl p-8 border border-[#4A154B]/30 shadow-sm text-center">
+                    <p className="text-[#4A154B] font-medium text-sm mb-1">うめこ for Slack</p>
+                    <p className="text-4xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月</span></p>
+                    <p className="text-gray-500 text-sm mb-6">1対1の相談も、チャンネルの見守りも、これ1つ</p>
+                    <ul className="space-y-2 text-base text-gray-600 text-left">
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>1対1で相談・言い換え・要約</li>
+                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>Slackチャンネルの見守り・整理（1チャンネル含む）</li>
                       <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>画像・PDF・Excel読み取り</li>
                       <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>Web検索</li>
                       <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>回数無制限</li>
-                    </ul>
-                  </div>
-                  <div className="bg-white rounded-2xl p-6 border border-[#4A154B]/30 shadow-sm">
-                    <p className="text-[#4A154B] font-medium text-sm mb-1">チャンネルプラン</p>
-                    <p className="text-3xl font-bold text-gray-800 mb-1">¥980<span className="text-base font-normal text-gray-500"> /月・1チャンネル</span></p>
-                    <p className="text-gray-500 text-sm mb-5">Slackチャンネルにうめこを招待</p>
-                    <ul className="space-y-2 text-base text-gray-600">
-                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>会話の見守り・整理</li>
-                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>自動介入</li>
                       <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>1人が払えばチャンネル全員使える</li>
-                      <li className="flex gap-2"><span className="text-[#4A154B]">&#10003;</span>回数無制限</li>
                     </ul>
+                    <p className="text-xs text-gray-400 mt-4">追加チャンネル: +¥490/月</p>
                   </div>
                 </div>
                 <div className="text-center mt-8">
                   <SlackButton size="sm">Slackに追加する</SlackButton>
-                  <p className="mt-3 text-sm text-gray-400">いつでも解約OK・DMとチャンネルは独立して契約できます</p>
+                  <p className="mt-3 text-sm text-gray-400">いつでも解約OK</p>
                 </div>
               </div>
             }
@@ -456,7 +440,7 @@ export default function LandingPage() {
               },
               {
                 q: "無料期間が終わったらどうなりますか？",
-                a: "うめこが応答しなくなります。パーソナルプラン（月額490円）やグループプラン（月額980円）に登録すると使えるようになります。それぞれ独立しているので、必要な方だけ契約できます。",
+                a: "うめこが応答しなくなります。うめこプラン（月額980円）に登録すると、1対1の相談もグループの見守りもすべて使えるようになります。",
               },
               {
                 q: "画像やPDFも読めますか？",

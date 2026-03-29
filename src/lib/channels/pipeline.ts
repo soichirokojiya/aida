@@ -9,12 +9,10 @@ import { generateSummary } from "../summarize/generator";
 import { chatCompletion, chatCompletionJson, transcribeAudio, webSearchCompletion } from "../llm/client";
 import { getMediatorPromptForContext } from "../prompts/system";
 import { getGroupMemberDisplayName, getUserDisplayName, getGroupMemberCount } from "./line";
-import { isDmActive, isGroupActive } from "../billing/check";
-import { getDmExpiredMessage, getGroupExpiredMessage } from "../billing/messages";
-import { createDmCheckoutUrl, createGroupCheckoutUrl } from "../billing/stripe";
+import { isDmActive, isGroupActive, isLineActive, isSlackActive } from "../billing/check";
+import { getDmExpiredMessage, getGroupExpiredMessage, getSlackDmExpiredMessage, getSlackChannelExpiredMessage } from "../billing/messages";
+import { createDmCheckoutUrl, createGroupCheckoutUrl, createSlackDmCheckoutUrl, createSlackChannelCheckoutUrl, createLineCheckoutUrl, createSlackCheckoutUrl } from "../billing/stripe";
 import { isSlackDmActive, isSlackChannelActive } from "../billing/link";
-import { createSlackDmCheckoutUrl, createSlackChannelCheckoutUrl } from "../billing/stripe";
-import { getSlackDmExpiredMessage, getSlackChannelExpiredMessage } from "../billing/messages";
 import { getConversationMemory, maybeUpdateSummary } from "../memory/summary";
 
 const BOT_NAME = "うめこ";
@@ -45,14 +43,8 @@ const CHAT_SYSTEM_PROMPT = `あなたは「うめこ」。LINEグループにい
 - 個人的な質問にはキャラとして自然に答える（「AIなので〜」とは絶対言わない）
 
 ## うめこのサービス情報（聞かれたらこの情報だけ正確に答える）
-- うめこ LINE:
-  - パーソナルプラン: 月額490円。1対1でうめこと話せる
-  - LINEグループプラン: 月額980円（1LINEグループ）。誰か1人が払えばグループ全員使える
-  - パーソナルとLINEグループは独立。片方だけでも使える
-- うめこ for Slack:
-  - パーソナルプラン: 月額490円。1対1でうめこと話せる
-  - チャンネルプラン: 月額980円（1Slackチャンネル）。誰か1人が払えばチャンネル全員使える
-  - パーソナルとチャンネルは独立。片方だけでも使える
+- うめこ LINE: 月額980円。1対1の相談もLINEグループの見守りも、これ1つで使える。グループは1つ含む（追加は+490円/グループ）。誰か1人が払えばグループ全員使える
+- うめこ for Slack: 月額980円。1対1の相談もチャンネルの見守りも、これ1つで使える。チャンネルは1つ含む（追加は+490円/チャンネル）。誰か1人が払えばチャンネル全員使える
 - LINE版とSlack版は独立したサービス。料金も別々
 - 無料トライアル: 最初の1ヶ月は無料。全機能使える（LINE・Slackそれぞれ）
 - 解約: うめこに「解約したい」と言えば手続きページのリンクを送る。ブロックやアンインストールだけでは課金は止まらないので、必ず解約手続きが必要
@@ -360,6 +352,36 @@ function cleanLlmOutput(text: string): string {
   return cleaned;
 }
 
+async function getUserStatusContext(event: NormalizedMessageEvent): Promise<string> {
+  try {
+    if (event.channelType === "slack") {
+      const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
+      const [slackUser, dmSub] = await Promise.all([
+        prisma.slackUser.findUnique({ where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } } }),
+        prisma.slackDmSubscription.findUnique({ where: { slackUserId_teamId: { slackUserId: event.senderId, teamId } } }),
+      ]);
+      const status = dmSub?.status === "active" ? "有料プラン利用中"
+        : slackUser ? "無料トライアル中" : "利用中";
+      return `\n\n【このユーザーの利用状況】${status}`;
+    } else {
+      const [lineUser, dmSub] = await Promise.all([
+        prisma.lineUser.findUnique({ where: { lineUserId: event.senderId } }),
+        prisma.dmSubscription.findUnique({ where: { lineUserId: event.senderId } }),
+      ]);
+      if (!lineUser) return "";
+      const now = new Date();
+      const trialActive = lineUser.trialEndsAt && lineUser.trialEndsAt > now;
+      const subActive = dmSub?.status === "active";
+      const status = subActive ? "有料プラン利用中"
+        : trialActive ? `無料トライアル中（${lineUser.trialEndsAt!.toLocaleDateString("ja-JP")}まで）`
+        : "トライアル終了";
+      return `\n\n【このユーザーの利用状況】${status}。友だち追加日: ${lineUser.createdAt.toLocaleDateString("ja-JP")}`;
+    }
+  } catch {
+    return "";
+  }
+}
+
 async function sendResponse(
   adapter: ChannelAdapter,
   event: NormalizedMessageEvent,
@@ -533,10 +555,11 @@ async function handleDirectMessage(
         task: "\n\n【応答の長さ】依頼内容に応じた長さで。元の文章と同程度を目安に",
       };
 
-      // Normal conversation with memory
-      const [{ formatted: recentMsgs, lastHumanMessageAt }, memory] = await Promise.all([
+      // Normal conversation with memory + user status
+      const [{ formatted: recentMsgs, lastHumanMessageAt }, memory, userStatus] = await Promise.all([
         getRecentMessages(conversation.id, 10),
         getConversationMemory(conversation.id),
+        getUserStatusContext(event),
       ]);
 
       const memoryContext = memory
@@ -548,7 +571,7 @@ async function handleDirectMessage(
 
       const imageHint = event.imageUrls?.length ? "\n（ユーザーが画像を送っています。画像の内容もふまえて応答してください）" : "";
       responseText = await chatCompletion(
-        CHAT_SYSTEM_PROMPT + (lengthGuide[cat] || lengthGuide.light) + `\n\n${imageHint}`,
+        CHAT_SYSTEM_PROMPT + (lengthGuide[cat] || lengthGuide.light) + userStatus + `\n\n${imageHint}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
         { purpose: chatPurpose, lastMessageAt: lastHumanMessageAt, userCreatedAt: conversation.createdAt },
         { imageUrls: event.imageUrls }
@@ -777,29 +800,27 @@ export async function processMessage(
     });
   }
 
-  // Check billing status
+  // Check billing status using unified check functions
   if (event.channelType === "line") {
-    if (event.isDirectMessage) {
-      const active = await isDmActive(event.senderId);
-      if (!active) {
+    const groupId = event.isDirectMessage ? undefined : event.externalThreadId;
+    const active = await isLineActive(event.senderId, groupId);
+    if (!active) {
+      if (event.isDirectMessage) {
         try {
-          const url = await createDmCheckoutUrl(event.senderId);
+          const url = await createLineCheckoutUrl(event.senderId);
           await sendResponse(adapter, event, getDmExpiredMessage(url));
         } catch {
-          await sendResponse(adapter, event, "おためし期間が終了しています。DMプラン（月額¥490）への登録をお願いします。");
+          await sendResponse(adapter, event, "おためし期間が終了しています。うめこプラン（月額¥980）への登録をお願いします。");
         }
         return;
-      }
-    } else {
-      const active = await isGroupActive(event.externalThreadId, event.senderId);
-      if (!active) {
+      } else {
         const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
         if (mentioned) {
           try {
-            const url = await createGroupCheckoutUrl(event.senderId, event.externalThreadId);
+            const url = await createLineCheckoutUrl(event.senderId, event.externalThreadId);
             await sendResponse(adapter, event, getGroupExpiredMessage(url));
           } catch {
-            await sendResponse(adapter, event, "このグループではまだうめこが有効になっていません。グループ利用権（月額¥980）への登録をお願いします。");
+            await sendResponse(adapter, event, "このグループではまだうめこが有効になっていません。うめこプラン（月額¥980）への登録をお願いします。");
           }
           return;
         }
@@ -810,28 +831,25 @@ export async function processMessage(
     }
   } else if (event.channelType === "slack") {
     const teamId = (event.rawEvent as { team_id?: string })?.team_id || "__legacy__";
-
-    if (event.isDirectMessage) {
-      const active = await isSlackDmActive(event.senderId, teamId);
-      if (!active) {
+    const channelId = event.isDirectMessage ? undefined : event.externalThreadId;
+    const active = await isSlackActive(event.senderId, teamId, channelId);
+    if (!active) {
+      if (event.isDirectMessage) {
         try {
-          const url = await createSlackDmCheckoutUrl(event.senderId, teamId);
+          const url = await createSlackCheckoutUrl(event.senderId, teamId);
           await sendResponse(adapter, event, getSlackDmExpiredMessage(url));
         } catch {
-          await sendResponse(adapter, event, "おためし期間が終了しています。パーソナルプラン（月額¥490）への登録をお願いします。");
+          await sendResponse(adapter, event, "おためし期間が終了しています。うめこプラン（月額¥980）への登録をお願いします。");
         }
         return;
-      }
-    } else {
-      const active = await isSlackChannelActive(event.externalThreadId, event.senderId, teamId);
-      if (!active) {
+      } else {
         const mentioned = event.text.match(/うめこ|ウメコ|梅子|umeko/i);
         if (mentioned) {
           try {
-            const url = await createSlackChannelCheckoutUrl(event.senderId, teamId, event.externalThreadId);
+            const url = await createSlackCheckoutUrl(event.senderId, teamId, event.externalThreadId);
             await sendResponse(adapter, event, getSlackChannelExpiredMessage(url));
           } catch {
-            await sendResponse(adapter, event, "このチャンネルではまだうめこが有効になっていません。チャンネルプラン（月額¥980）への登録をお願いします。");
+            await sendResponse(adapter, event, "このチャンネルではまだうめこが有効になっていません。うめこプラン（月額¥980）への登録をお願いします。");
           }
           return;
         }

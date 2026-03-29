@@ -29,13 +29,13 @@ export default async function KpiPage() {
   const slackActiveDmSubs = await prisma.slackDmSubscription.count({ where: { status: "active" } });
   const slackActiveChannelSubs = await prisma.slackChannelSubscription.count({ where: { status: "active" } });
 
-  // --- MRR ---
-  const dmMrr = activeDmSubs * 490;
-  const groupMrr = activeGroupSubs * 980;
-  const slackDmMrr = slackActiveDmSubs * 490;
-  const slackChannelMrr = slackActiveChannelSubs * 980;
-  const lineMrr = dmMrr + groupMrr;
-  const slackMrr = slackDmMrr + slackChannelMrr;
+  // --- MRR (unified plan = 980, count unique payers) ---
+  // For now, each active subscription = 980 (unified plan)
+  // Legacy 490-only subs are counted as 980 since unified includes both
+  const lineSubs = activeDmSubs + activeGroupSubs;
+  const slackSubs = slackActiveDmSubs + slackActiveChannelSubs;
+  const lineMrr = lineSubs * 980;
+  const slackMrr = slackSubs * 980;
   const totalMrr = lineMrr + slackMrr;
 
   // --- Churn ---
@@ -96,7 +96,7 @@ export default async function KpiPage() {
   const monthInputCost = ((monthUsage._sum.inputTokens || 0) / 1_000_000) * 0.15;
   const monthOutputCost = ((monthUsage._sum.outputTokens || 0) / 1_000_000) * 0.60;
   const monthCostJpy = Math.round((monthInputCost + monthOutputCost) * 150);
-  const paidUsers = activeDmSubs + activeGroupSubs;
+  const paidUsers = lineSubs + slackSubs;
   const costPerPaid = paidUsers > 0 ? Math.round(monthCostJpy / paidUsers) : 0;
 
   function Card({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -123,11 +123,11 @@ export default async function KpiPage() {
       <h1 className="text-2xl font-bold mb-6">KPIダッシュボード</h1>
 
       <Section title="収益">
-        <Card label="合計MRR" value={`¥${totalMrr.toLocaleString()}`} sub={`LINE ¥${lineMrr} / Slack ¥${slackMrr}`} />
-        <Card label="LINE DM契約" value={activeDmSubs} sub="¥490/月" />
-        <Card label="LINEグループ契約" value={activeGroupSubs} sub="¥980/月" />
-        <Card label="Slack DM契約" value={slackActiveDmSubs} sub="¥490/月" />
-        <Card label="Slackチャンネル契約" value={slackActiveChannelSubs} sub="¥980/月" />
+        <Card label="合計MRR" value={`¥${totalMrr.toLocaleString()}`} sub={`LINE ¥${lineMrr.toLocaleString()} / Slack ¥${slackMrr.toLocaleString()}`} />
+        <Card label="LINE契約" value={lineSubs} sub="¥980/月" />
+        <Card label="Slack契約" value={slackSubs} sub="¥980/月" />
+        <Card label="LINE DM(内訳)" value={activeDmSubs} sub="DmSubscription" />
+        <Card label="LINEグループ(内訳)" value={activeGroupSubs} sub="GroupSubscription" />
         <Card label="粗利率" value={totalMrr > 0 ? `${Math.round(((totalMrr - monthCostJpy) / totalMrr) * 100)}%` : "-"} />
       </Section>
 
