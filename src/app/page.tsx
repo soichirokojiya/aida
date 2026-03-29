@@ -360,7 +360,7 @@ export default function LandingPage() {
             <p className="text-teal-600 text-sm font-medium mb-2">仕事でも、うめこ</p>
             <p className="text-gray-800 font-medium text-lg mb-1">チーム内のすれ違いも、さらっと整理</p>
             <p className="text-gray-500 text-sm mb-5">Slackにも対応。チャンネルに追加するだけ。</p>
-            <div className="grid md:grid-cols-2 gap-6 items-center">
+            <div className="grid md:grid-cols-2 gap-6 items-start">
               <div className="space-y-4">
                 <div className="bg-[#FAFBFC] rounded-xl p-5 border border-gray-100">
                   <ul className="space-y-2 text-sm text-gray-600">
