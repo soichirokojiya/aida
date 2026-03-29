@@ -113,17 +113,31 @@ export function LineMock({
   );
 }
 
+// Group chat where umeko stays silent (watching)
 export const FAMILY_CHAT: Message[] = [
   { sender: "right", text: "なんで毎回こうなるの？\n私ばっかりやってるんだけど", time: "21:42" },
   { sender: "left", name: "たかし", text: "いや、言ってくれればやるって\n前も言ったじゃん", time: "21:43" },
   { sender: "right", text: "なんでこっちがお願いしなきゃ\nいけないの？自分の家でしょ？", time: "21:44" },
+];
+
+// DM from umeko to the party (arrives privately)
+export const DM_INTERVENTION_CHAT: Message[] = [
   {
     sender: "left",
     name: "うめこ",
     avatar: "/umeko-logo.png",
     isBot: true,
-    text: "ちょっと待って。\n「やってほしい」と「自分で気づいてほしい」で、ちょっとすれ違ってるかも。\nいったん、何が一番モヤッとしてるか一つだけ聞いてみない？",
-    time: "21:44",
+    text: "さっきのグループ、少し強く伝わってるかも。\n「○○してほしい」を先に出すと、伝わりやすくなるかもね",
+    time: "21:45",
+  },
+  { sender: "right", text: "たしかに…ちょっと言い方\nきつかったかも", time: "21:46" },
+  {
+    sender: "left",
+    name: "うめこ",
+    avatar: "/umeko-logo.png",
+    isBot: true,
+    text: "たとえば「一人でやるのしんどいから、ゴミ出しだけお願いしてもいい？」みたいな感じだと、受け取りやすいかも",
+    time: "21:46",
   },
 ];
 

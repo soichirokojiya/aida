@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LineMock, FAMILY_CHAT, DM_CONSULT_CHAT } from "@/components/line-mock";
+import { LineMock, FAMILY_CHAT, DM_CONSULT_CHAT, DM_INTERVENTION_CHAT } from "@/components/line-mock";
 import { SlackMock, SLACK_BUSINESS_CHAT } from "@/components/slack-mock";
 import { PlatformTabs } from "@/components/platform-tabs";
 
@@ -99,8 +99,14 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="hidden md:block">
+            <div className="hidden md:flex flex-col gap-3">
               <LineMock title="家族グループ" messages={FAMILY_CHAT} memberCount={3} />
+              <div className="flex items-center gap-2 justify-center">
+                <div className="h-px w-8 bg-gray-300" />
+                <p className="text-xs text-gray-400">うめこが当事者にDM</p>
+                <div className="h-px w-8 bg-gray-300" />
+              </div>
+              <LineMock title="うめこ" messages={DM_INTERVENTION_CHAT} />
             </div>
           </div>
         </div>
