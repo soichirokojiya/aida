@@ -240,6 +240,41 @@ model SlackDmSubscription {
   @@index([status])
 }
 
+model DailyMetric {
+  id                      String   @id @default(cuid())
+  date                    DateTime @unique @db.Date
+
+  // LINE
+  lineNewUsers            Int      @default(0)
+  lineUnfollows           Int      @default(0)
+  lineTrialUsers          Int      @default(0)
+  lineActiveDmSubs        Int      @default(0)
+  lineActiveGroupSubs     Int      @default(0)
+  lineCanceledDmSubs      Int      @default(0)  // その日に解約されたDM数
+  lineCanceledGroupSubs   Int      @default(0)  // その日に解約されたグループ数
+  lineDau                 Int      @default(0)
+
+  // Slack
+  slackNewUsers           Int      @default(0)
+  slackWorkspaces         Int      @default(0)
+  slackTrialUsers         Int      @default(0)
+  slackActiveDmSubs       Int      @default(0)
+  slackActiveChannelSubs  Int      @default(0)
+  slackCanceledDmSubs     Int      @default(0)
+  slackCanceledChannelSubs Int     @default(0)
+  slackDau                Int      @default(0)
+
+  // 全体
+  totalMessages           Int      @default(0)  // その日のメッセージ数
+  totalInterventions      Int      @default(0)  // その日の介入数
+  mrrJpy                  Int      @default(0)  // MRR（円）
+  apiCostJpy              Int      @default(0)  // APIコスト（円）
+
+  createdAt               DateTime @default(now())
+
+  @@index([date])
+}
+
 model SlackChannelSubscription {
   id                    String   @id @default(cuid())
   channelId             String   @unique
