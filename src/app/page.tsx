@@ -99,14 +99,14 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="hidden md:block">
-              <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+            <div className="hidden md:flex justify-center">
+              <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200 max-w-[340px]">
                 <video
                   autoPlay
                   loop
                   muted
                   playsInline
-                  className="w-full max-w-[340px]"
+                  className="w-full"
                 >
                   <source src="/demo-dm-follow.mp4" type="video/mp4" />
                 </video>
