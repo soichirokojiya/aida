@@ -376,7 +376,7 @@ async function sendResponse(
 async function handleDirectMessage(
   event: NormalizedMessageEvent,
   adapter: ChannelAdapter,
-  conversation: { id: string; contextType: string }
+  conversation: { id: string; contextType: string; createdAt: Date }
 ): Promise<void> {
   try {
   // 0. If message is just bot name or empty after stripping, respond naturally
@@ -550,7 +550,7 @@ async function handleDirectMessage(
       responseText = await chatCompletion(
         CHAT_SYSTEM_PROMPT + (lengthGuide[cat] || lengthGuide.light) + `\n\n${imageHint}`,
         `${memoryContext}${recentContext}\n\nユーザー: ${event.text}`,
-        { purpose: chatPurpose, lastMessageAt: lastHumanMessageAt },
+        { purpose: chatPurpose, lastMessageAt: lastHumanMessageAt, userCreatedAt: conversation.createdAt },
         { imageUrls: event.imageUrls }
       );
       break;
