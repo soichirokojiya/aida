@@ -79,11 +79,14 @@ export default function LandingPage() {
               <p className="text-gray-500 text-base md:text-lg leading-relaxed mb-3">
                 すれ違いや気まずさを、少しずつ軽く。
               </p>
-              <p className="text-gray-500 text-base leading-relaxed mb-8">
+              <p className="text-gray-500 text-base leading-relaxed mb-3">
                 うめこは、ことばに迷ったときのAIサービスです。
-                <br />
-                LINEやSlackのグループに入れておけば、空気が悪くなりそうなときだけ、そっと会話を整理。
-                <br />
+              </p>
+              <p className="text-gray-500 text-base leading-relaxed mb-3">
+                グループに入れておくと、空気が変わったときに<strong className="text-gray-700">あなたにだけDM</strong>で伝え方を提案します。
+                みんなの前で指摘するのではなく、あなた自身のことばで場に戻れるように。
+              </p>
+              <p className="text-gray-500 text-base leading-relaxed mb-8">
                 1対1で話しかければ、伝え方の相談や言い換え、モヤモヤの整理もできます。
               </p>
 
@@ -203,7 +206,7 @@ export default function LandingPage() {
               <span className="text-3xl block mb-3">👥</span>
               <p className="font-medium text-gray-800 mb-2">グループを見守る</p>
               <p className="text-sm text-gray-500 leading-relaxed">
-                ふだんは静か。空気が変わったときだけ、さりげなく声をかけます。
+                ふだんは静か。空気が変わったら、当事者にだけDMで「こう言い換えると伝わるかも」と提案します。
               </p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
