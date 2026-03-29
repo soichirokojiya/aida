@@ -84,7 +84,7 @@ export default function LandingPage() {
               </p>
               <p className="text-gray-500 text-base leading-relaxed mb-3">
                 グループに入れておくと、空気が変わったときに<strong className="text-gray-700">当事者にだけDM</strong>で伝え方を提案します。
-                みんなの前では何も言わない。本人が自分のことばで場に戻れるように。
+                「うめこ」と呼べばグループ内でも応えるけれど、基本は裏方。本人が自分のことばで場に戻れるように。
               </p>
               <p className="text-gray-500 text-base leading-relaxed mb-8">
                 1対1で話しかければ、伝え方の相談や言い換え、モヤモヤの整理もできます。
