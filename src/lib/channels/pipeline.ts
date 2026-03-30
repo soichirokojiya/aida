@@ -833,10 +833,10 @@ async function handleGroupMessage(
 
       if (!aggressorId && !receiverId) {
         // ── Fallback: parties not identified, send generic DM to current sender only ──
-        const dmHint = "あなたはグループの会話を見守っている「うめこ」です。\n当事者にDMで話しかけています。グループには出しません。\n相手の言い方がきつく伝わっている可能性があること、こう言い換えると伝わりやすいかもしれないこと、を自然な口調で提案してください。\n150文字以内。「次の一言の提案」に徹する。";
+        const dmHint = "あなたはグループの会話を見守っている「うめこ」です。\n当事者にDMで話しかけています。グループには出しません。\n友達として「ちょっときつく見えてるかも」と気づきを促してください。\n相手に送る文面の提案はしない。あくまで本人への声かけ。\n100文字以内。";
         const stageHint = judgment.severity === "high"
           ? "（深刻な状況。いったん返信を止めて時間を置くことを提案）"
-          : "（軽めの提案。「こう言い換えると伝わりやすいかも」くらい）";
+          : "（軽めに。さらっと一言）";
 
         try {
           responseText = await generateMediation(recentMessages, conversation.contextType, dmHint + " " + stageHint);
