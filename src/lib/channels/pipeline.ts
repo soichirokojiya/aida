@@ -249,7 +249,7 @@ async function resolveName(senderId: string, threadId: string): Promise<string |
 async function getRecentMessages(
   conversationId: string,
   limit = 10
-): Promise<{ formatted: string[]; memberNames: string[]; lastHumanMessageAt?: Date }> {
+): Promise<{ formatted: string[]; memberNames: string[]; lastHumanMessageAt?: Date; labelToSenderId: Map<string, string> }> {
   const messages = await prisma.message.findMany({
     where: { conversationId },
     orderBy: { timestamp: "desc" },
@@ -287,11 +287,17 @@ async function getRecentMessages(
     }
   }
 
+  // Build reverse map: label → senderId
+  const labelToSenderId = new Map<string, string>();
+  for (const [senderId, { label }] of senderMap.entries()) {
+    labelToSenderId.set(label, senderId);
+  }
+
   // Find the last human message timestamp (excluding the current one)
   const lastHumanMsg = messages.find(m => m.senderRole === "human");
   const lastHumanMessageAt = lastHumanMsg?.timestamp || undefined;
 
-  return { formatted, memberNames, lastHumanMessageAt };
+  return { formatted, memberNames, lastHumanMessageAt, labelToSenderId };
 }
 
 // Get recent human sender IDs (for DM intervention targeting)
@@ -704,7 +710,7 @@ async function handleGroupMessage(
     getGroupMemberCount(event.externalThreadId),
     import("../memory/profile").then(m => m.getGroupRelationshipContext(conversation.id)),
   ]);
-  const { formatted: recentMessages, memberNames } = recentData;
+  const { formatted: recentMessages, memberNames, labelToSenderId } = recentData;
   const memberContext = memberNames.length > 0
     ? `（メンバー情報: ${memberNames.join("、")}）`
     : "";
@@ -778,45 +784,86 @@ async function handleGroupMessage(
 
     if (canIntervene) {
       // ── Layer 3: Generate intervention via DM to parties ──
-      const dmHint = "あなたはグループの会話を見守っている「うめこ」です。\n当事者にDMで話しかけています。グループには出しません。\n相手の言い方がきつく伝わっている可能性があること、こう言い換えると伝わりやすいかもしれないこと、を自然な口調で提案してください。\n150文字以内。「次の一言の提案」に徹する。";
-      const stageHint = judgment.severity === "high"
-        ? "（深刻な状況。いったん返信を止めて時間を置くことを提案）"
-        : "（軽めの提案。「こう言い換えると伝わりやすいかも」くらい）";
-
-      try {
-        responseText = await generateMediation(recentMessages, conversation.contextType, dmHint + " " + stageHint);
-      } catch (err) {
-        console.error("generateMediation error:", err instanceof Error ? err.message : err);
-      }
-      if (!responseText) {
-        responseText = "少し強く伝わってるかも。返信する前に、ちょっとだけ整えてみない？";
-      }
-
-      const cleanedDm = cleanLlmOutput(responseText);
+      const { generateRoleDMs } = await import("../mediation/generator");
       triggerType = "auto_mediation";
 
-      // Try to DM the recent participants (not the group)
-      const senderIds = await getRecentSenderIds(conversation.id, 5);
-      let dmSent = false;
+      // Resolve aggressor/receiver from LLM labels → actual senderIds
+      const aggressorId = judgment.aggressorLabel ? labelToSenderId.get(judgment.aggressorLabel) : undefined;
+      const receiverId = judgment.receiverLabel ? labelToSenderId.get(judgment.receiverLabel) : undefined;
 
-      for (const senderId of senderIds) {
-        const sent = await trySendDm(adapter, senderId, cleanedDm, event.channelType);
-        if (sent) dmSent = true;
+      let dmSent = false;
+      let savedResponseText: string;
+
+      if (aggressorId || receiverId) {
+        // ── Role-specific DMs: different messages for each party ──
+        try {
+          const { aggressorDm, receiverDm } = await generateRoleDMs(
+            recentMessages, conversation.contextType, judgment.severity
+          );
+
+          const cleanedAggressorDm = cleanLlmOutput(aggressorDm);
+          const cleanedReceiverDm = cleanLlmOutput(receiverDm);
+
+          if (aggressorId) {
+            const sent = await trySendDm(adapter, aggressorId, cleanedAggressorDm, event.channelType);
+            if (sent) dmSent = true;
+          }
+          if (receiverId && receiverId !== aggressorId) {
+            const sent = await trySendDm(adapter, receiverId, cleanedReceiverDm, event.channelType);
+            if (sent) dmSent = true;
+          }
+
+          savedResponseText = `[aggressor] ${cleanedAggressorDm} | [receiver] ${cleanedReceiverDm}`;
+        } catch (err) {
+          console.error("generateRoleDMs error:", err instanceof Error ? err.message : err);
+          // Fall through to generic mediation below
+          savedResponseText = "";
+        }
+
+        // If role-specific DMs failed to send, fall back to group message
+        if (!dmSent && savedResponseText) {
+          const fallbackText = cleanLlmOutput(savedResponseText.split(" | ")[0].replace("[aggressor] ", ""));
+          console.log("Role DMs failed, falling back to group message");
+          await sendResponse(adapter, event, fallbackText);
+          savedResponseText = fallbackText;
+        }
       }
 
-      // Fallback: if no DM could be sent, post in group
-      if (!dmSent) {
-        console.log(`DM intervention failed for all parties, falling back to group message`);
-        await sendResponse(adapter, event, cleanedDm);
+      if (!aggressorId && !receiverId) {
+        // ── Fallback: parties not identified, send generic DM to current sender only ──
+        const dmHint = "あなたはグループの会話を見守っている「うめこ」です。\n当事者にDMで話しかけています。グループには出しません。\n相手の言い方がきつく伝わっている可能性があること、こう言い換えると伝わりやすいかもしれないこと、を自然な口調で提案してください。\n150文字以内。「次の一言の提案」に徹する。";
+        const stageHint = judgment.severity === "high"
+          ? "（深刻な状況。いったん返信を止めて時間を置くことを提案）"
+          : "（軽めの提案。「こう言い換えると伝わりやすいかも」くらい）";
+
+        try {
+          responseText = await generateMediation(recentMessages, conversation.contextType, dmHint + " " + stageHint);
+        } catch (err) {
+          console.error("generateMediation error:", err instanceof Error ? err.message : err);
+        }
+        if (!responseText) {
+          responseText = "少し強く伝わってるかも。返信する前に、ちょっとだけ整えてみない？";
+        }
+
+        const cleanedDm = cleanLlmOutput(responseText);
+        const sent = await trySendDm(adapter, event.senderId, cleanedDm, event.channelType);
+        if (sent) dmSent = true;
+
+        if (!dmSent) {
+          console.log("DM intervention failed, falling back to group message");
+          await sendResponse(adapter, event, cleanedDm);
+        }
+
+        savedResponseText = cleanedDm;
       }
 
       // Save bot message and intervention
-      await saveBotMessage(conversation.id, cleanedDm);
-      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason + (dmSent ? " [DM]" : " [group-fallback]"), cleanedDm);
+      await saveBotMessage(conversation.id, savedResponseText!);
+      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason + (dmSent ? " [DM]" : " [group-fallback]"), savedResponseText!);
 
       // Update group relationship memory in background
       import("../memory/profile").then(m =>
-        m.updateGroupRelationship(conversation.id, recentMessages, cleanedDm)
+        m.updateGroupRelationship(conversation.id, recentMessages, savedResponseText!)
       ).catch(() => {});
 
       // Skip the normal send/save block below since we handled it here

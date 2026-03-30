@@ -5,6 +5,8 @@ export interface ModerationJudgment {
   action: "ignore" | "respond" | "intervene";
   severity: "low" | "medium" | "high";
   reason: string;
+  aggressorLabel?: string;  // e.g. "相手1" — the person whose tone is harsh
+  receiverLabel?: string;   // e.g. "相手2" — the person on the receiving end
 }
 
 // Layer 0: OpenAI Moderation API (free)
@@ -56,13 +58,19 @@ severity（interventeの場合のみ重要）:
 - "medium": 明確な不満、怒り、口論
 - "high": 人格否定、最後通告、関係断絶の示唆、安全上の懸念
 
+aggressorLabel（interventeの場合のみ）:
+- 会話の中で強い言い方・攻撃的なトーンの発言者のラベル（例: "相手1"）。特定できない場合はnull
+
+receiverLabel（interventeの場合のみ）:
+- その発言を受けている相手のラベル（例: "相手2"）。特定できない場合はnull
+
 重要な判定基準:
 - たとえ1人の発言でも、強い怒りや「もう無理」「受け入れられない」「関係を見直す」等があればintervene
 - 「不快」「いい加減にして」「我慢の限界」「信じられない」等の感情的に強い表現はmedium以上
 - 「うめこ」「梅子」と名前を呼ばれていたらrespond
 - 雑談、報告、お礼、業務連絡はignore
 
-{"action": "ignore/respond/intervene", "severity": "low/medium/high", "reason": "判定理由を一言で"}`,
+{"action": "ignore/respond/intervene", "severity": "low/medium/high", "reason": "判定理由を一言で", "aggressorLabel": "相手X or null", "receiverLabel": "相手Y or null"}`,
       `${groupContext}${relationshipHint}\n\n直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新のメッセージ: ${currentMessage}`,
       { purpose: "intent" }
     );
@@ -71,6 +79,8 @@ severity（interventeの場合のみ重要）:
       action: result.action || "ignore",
       severity: result.severity || "low",
       reason: result.reason || "",
+      aggressorLabel: result.aggressorLabel || undefined,
+      receiverLabel: result.receiverLabel || undefined,
     };
   } catch (err) {
     console.warn("judgeGroupMessage failed:", err instanceof Error ? err.message : err);
