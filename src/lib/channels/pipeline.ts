@@ -347,13 +347,15 @@ async function saveIntervention(
   triggerType: string,
   score: number | null,
   reason: string | null,
-  responseText: string
+  responseText: string,
+  severity?: string | null
 ) {
   return prisma.intervention.create({
     data: {
       conversationId,
       triggerMessageId: messageId,
       triggerType,
+      severity: severity || null,
       score,
       reason,
       responseText,
@@ -859,7 +861,7 @@ async function handleGroupMessage(
 
       // Save bot message and intervention
       await saveBotMessage(conversation.id, savedResponseText!);
-      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason + (dmSent ? " [DM]" : " [group-fallback]"), savedResponseText!);
+      await saveIntervention(conversation.id, savedMessage.id, triggerType, conflictScore, judgment.reason + (dmSent ? " [DM]" : " [group-fallback]"), savedResponseText!, judgment.severity);
 
       // Update group relationship memory in background
       import("../memory/profile").then(m =>

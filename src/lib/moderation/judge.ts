@@ -88,34 +88,53 @@ receiverLabel（interventeの場合のみ）:
   }
 }
 
-// Cooldown check based on severity
+// Cooldown check: per-severity counting with global cap
 export async function shouldIntervene(
   conversationId: string,
   severity: "low" | "medium" | "high"
 ): Promise<boolean> {
-  const limits: Record<string, { cooldownMs: number; maxPerThirtyMin: number }> = {
-    low: { cooldownMs: 10 * 60 * 1000, maxPerThirtyMin: 1 },
-    medium: { cooldownMs: 3 * 60 * 1000, maxPerThirtyMin: 3 },
-    high: { cooldownMs: 0, maxPerThirtyMin: 999 },
+  const severityLimits: Record<string, { cooldownMs: number; maxPerThirtyMin: number; maxPerDay: number }> = {
+    low:    { cooldownMs: 30 * 60 * 1000, maxPerThirtyMin: 1, maxPerDay: 3 },
+    medium: { cooldownMs: 15 * 60 * 1000, maxPerThirtyMin: 2, maxPerDay: 5 },
+    high:   { cooldownMs: 5 * 60 * 1000,  maxPerThirtyMin: 3, maxPerDay: 8 },
   };
 
-  const { cooldownMs, maxPerThirtyMin } = limits[severity];
+  const GLOBAL_MAX_PER_THIRTY_MIN = 3;
+  const GLOBAL_MAX_PER_DAY = 10;
 
-  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+  const { cooldownMs, maxPerThirtyMin, maxPerDay } = severityLimits[severity];
+
+  const now = Date.now();
+  const thirtyMinAgo = new Date(now - 30 * 60 * 1000);
+  const dayStart = new Date(now - 24 * 60 * 60 * 1000);
+
   const recentInterventions = await prisma.intervention.findMany({
     where: {
       conversationId,
       triggerType: "auto_mediation",
-      createdAt: { gte: thirtyMinAgo },
+      createdAt: { gte: dayStart },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const count = recentInterventions.length;
-  if (count >= maxPerThirtyMin) return false;
+  // Global daily cap
+  if (recentInterventions.length >= GLOBAL_MAX_PER_DAY) return false;
 
-  const last = recentInterventions[0];
-  if (last && cooldownMs > 0 && (Date.now() - last.createdAt.getTime() < cooldownMs)) return false;
+  // Global 30-min cap
+  const globalThirtyMin = recentInterventions.filter(i => i.createdAt >= thirtyMinAgo);
+  if (globalThirtyMin.length >= GLOBAL_MAX_PER_THIRTY_MIN) return false;
+
+  // Per-severity 30-min cap
+  const severityThirtyMin = globalThirtyMin.filter(i => i.severity === severity);
+  if (severityThirtyMin.length >= maxPerThirtyMin) return false;
+
+  // Per-severity daily cap
+  const severityDaily = recentInterventions.filter(i => i.severity === severity);
+  if (severityDaily.length >= maxPerDay) return false;
+
+  // Cooldown: time since last intervention of same severity
+  const lastSameSeverity = severityThirtyMin[0];
+  if (lastSameSeverity && cooldownMs > 0 && (now - lastSameSeverity.createdAt.getTime() < cooldownMs)) return false;
 
   return true;
 }

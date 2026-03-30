@@ -52,6 +52,7 @@ model Intervention {
   conversationId   String
   triggerMessageId String?
   triggerType      String   // manual_rewrite, manual_summary, auto_mediation, cooldown, clarification, safety_escalation
+  severity         String?  // low, medium, high (for auto_mediation)
   score            Int?
   reason           String?
   responseText     String
