@@ -1,6 +1,8 @@
 import { prisma } from "../db/prisma";
 import { chatCompletionJson } from "../llm/client";
 
+const PROFILE_UPDATE_INTERVAL = 20; // Update profile every N messages
+
 // Extract and update user profile from conversation
 export async function updateUserProfile(
   userId: string,
@@ -8,6 +10,16 @@ export async function updateUserProfile(
   recentMessages: string[]
 ): Promise<void> {
   if (recentMessages.length < 3) return;
+
+  // Only update periodically based on message count
+  try {
+    const msgCount = await prisma.message.count({
+      where: { senderId: userId, senderRole: "human" },
+    });
+    if (msgCount % PROFILE_UPDATE_INTERVAL !== 0) return;
+  } catch {
+    return;
+  }
 
   try {
     const existing = await prisma.userProfile.findUnique({ where: { userId } });

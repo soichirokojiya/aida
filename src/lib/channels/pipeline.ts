@@ -629,10 +629,15 @@ async function handleDirectMessage(
     }
   }
 
-  // Update summary in background (non-blocking)
+  // Update summary and user profile in background (non-blocking)
   maybeUpdateSummary(conversation.id).catch((err) => {
     console.warn("DM summary update failed:", conversation.id, err instanceof Error ? err.message : err);
   });
+  getRecentMessages(conversation.id, 10).then(({ formatted }) => {
+    import("../memory/profile").then(m =>
+      m.updateUserProfile(event.senderId, event.channelType, formatted)
+    );
+  }).catch(() => {});
 
   // Clean before sending and saving
   const cleanedResponse = cleanLlmOutput(responseText);
