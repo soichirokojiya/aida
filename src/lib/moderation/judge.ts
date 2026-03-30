@@ -56,7 +56,7 @@ action:
 severity（interventeの場合のみ重要）:
 - "low": 軽いすれ違い、ちょっとしたモヤモヤ
 - "medium": 明確な不満、怒り、口論
-- "high": 人格否定、最後通告、関係断絶の示唆、安全上の懸念
+- "high": 人格否定、最後通告、関係断絶の示唆、安全上の懸念、「もう期待しない」「もう無理」等の諦め・絶望表現
 
 aggressorLabel（interventeの場合のみ）:
 - 会話の中で強い言い方・攻撃的なトーンの発言者のラベル（例: "相手1"）。特定できない場合はnull
@@ -137,6 +137,13 @@ export async function shouldIntervene(
   // Per-severity daily cap
   const severityDaily = recentInterventions.filter(i => i.severity === severity);
   if (severityDaily.length >= maxPerDay) return false;
+
+  // Escalation check: if the last intervention was lower severity, skip cooldown
+  const lastIntervention = globalThirtyMin[0];
+  const severityOrder = { low: 0, medium: 1, high: 2 };
+  const isEscalation = lastIntervention
+    && severityOrder[severity] > severityOrder[(lastIntervention.severity as "low" | "medium" | "high") || "low"];
+  if (isEscalation) return true;
 
   // Cooldown: time since last intervention of same severity
   const lastSameSeverity = severityThirtyMin[0];
