@@ -70,6 +70,12 @@ receiverLabel（interventeの場合のみ）:
 - 「うめこ」「梅子」と名前を呼ばれていたらrespond
 - 雑談、報告、お礼、業務連絡はignore
 
+respondの厳格ルール（最重要）:
+- respondは「うめこ」「梅子」「ウメコ」「umeko」と名前で直接呼ばれている場合のみ
+- うめこ「について」話している（「DMが来た」「うめこの機能」等）だけではrespond禁止→ignore
+- 「なんてきてる？」「このレスいらんな」等、メンバー同士の会話はignore
+- 迷ったらignore。respondは名前呼びだけに限定する
+
 {"action": "ignore/respond/intervene", "severity": "low/medium/high", "reason": "判定理由を一言で", "aggressorLabel": "相手X or null", "receiverLabel": "相手Y or null"}`,
       `${groupContext}${relationshipHint}\n\n直近の会話:\n${recentMessages.slice(-5).join("\n")}\n\n最新のメッセージ: ${currentMessage}`,
       { purpose: "intent" }
