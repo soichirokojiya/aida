@@ -1,0 +1,251 @@
+{
+  "meta": {
+    "title": "Umeko – AI Communication Assistant for LINE & Slack",
+    "description": "Umeko is an AI that softens hard-to-say messages on LINE and Slack. Ease tension in family, couple, and workplace conversations. Free for 1 month.",
+    "ogAlt": "Umeko – AI Communication Assistant for LINE & Slack"
+  },
+  "nav": {
+    "brand": "Umeko"
+  },
+  "hero": {
+    "h1_1": "Say the hard things,",
+    "h1_2": "gently.",
+    "sub1": "Ease the tension, little by little.",
+    "sub2": "Umeko is an AI service for when you can't find the right words.",
+    "sub3_1": "Add Umeko to a group, and when the mood shifts, it privately ",
+    "sub3_strong": "DMs only the people involved",
+    "sub3_2": " with softer ways to say what they mean. Call \u201cUmeko\u201d and it\u2019ll respond in the group too \u2014 but mostly it stays in the background, helping people find their own words.",
+    "sub4": "In 1-on-1 chats, Umeko helps you rephrase messages, talk through frustrations, and sort out your feelings.",
+    "lineBtn": "Start on LINE",
+    "slackBtn": "Add to Slack",
+    "freeTrial": "Free for your first month"
+  },
+  "media": {
+    "label": "Featured in"
+  },
+  "empathy": {
+    "label": "When words fail",
+    "title": "Sound familiar?",
+    "items": [
+      "You know what you want to say, but you're afraid it'll come out too harsh.",
+      "The same misunderstanding keeps happening, and talking about it is exhausting.",
+      "Unspoken feelings pile up until they all spill out at once.",
+      "You need to give feedback at work without being too blunt.",
+      "You want a quick sounding board, but it's not worth bothering someone about."
+    ],
+    "closing": "For those moments when words fail — Umeko is here."
+  },
+  "brand": {
+    "title": "What Umeko is like",
+    "description": "Every workplace and every family has that one person who makes things a little calmer. Umeko aspires to be that kind of presence.",
+    "traits": ["Neutral", "No lectures", "No taking sides", "No judging feelings"],
+    "bio": "Originally from Fukuoka. Former customer support agent. What I learned there is that the same message, worded differently, gets a completely different reaction. Being right doesn't always mean being heard.\n\nWhat I can do isn't to decide who's right — it's to help you adjust your words, just a little. Feel free to talk to me anytime."
+  },
+  "features": {
+    "title": "What Umeko can do",
+    "items": [
+      {
+        "icon": "👥",
+        "title": "Watch over groups",
+        "desc": "Usually quiet. When the mood shifts, Umeko DMs each person involved with suggestions for softer phrasing."
+      },
+      {
+        "icon": "💬",
+        "title": "1-on-1 counseling",
+        "desc": "Help with phrasing, rewording messages, and sorting out frustrations. Just talk to Umeko like a friend."
+      },
+      {
+        "icon": "✏️",
+        "title": "Soften your words",
+        "desc": "Same meaning, gentler tone. Umeko can also read images and PDFs."
+      }
+    ],
+    "cta": "Try talking to Umeko",
+    "ctaSub": "Free for 1 month"
+  },
+  "group": {
+    "label": "In groups",
+    "title": "Quietly sorts things out when conversations get heated",
+    "desc": "Just add Umeko to your LINE group or Slack channel. When people talk past each other, Umeko identifies the disconnect and gently suggests a way forward.",
+    "whatUmekoDoes": "What Umeko does",
+    "actions": [
+      "Never says who's wrong",
+      "Puts the disconnect into words",
+      "Suggests just one next step"
+    ],
+    "useCasesTitle": "Great for groups like",
+    "useCases": [
+      "Couples, families, partners",
+      "Project teams",
+      "Client communication groups",
+      "Shared living arrangements"
+    ]
+  },
+  "dm": {
+    "label": "1-on-1 chats",
+    "title": "Not sure how to say it? Start with Umeko",
+    "desc": "Get a second opinion on a message before you send it, or just talk through what's bothering you. Umeko is always available for a quick chat.",
+    "useCasesTitle": "Ways to use it",
+    "useCases": [
+      "\"I want to say this, but how?\"",
+      "\"Make this message softer\"",
+      "\"I just need to vent\"",
+      "\"Help me draft a polite decline\""
+    ]
+  },
+  "scenarios": {
+    "title": "Umeko in everyday life",
+    "family": {
+      "label": "Umeko for parents",
+      "title": "Pause before you say too much",
+      "desc": "Even conversations with teenagers can be a little softer.",
+      "cards": [
+        { "icon": "📚", "title": "Homework", "desc": "\"Why haven't you done your homework?\" sound familiar? Umeko suggests \"How far did you get?\" instead." },
+        { "icon": "📱", "title": "Screen time", "desc": "Turn rule negotiations from a confrontation into a conversation." },
+        { "icon": "🎯", "title": "Future plans", "desc": "Without dismissing either side's feelings, Umeko helps identify what's actually being misunderstood." }
+      ]
+    },
+    "work": {
+      "label": "Umeko for work",
+      "title": "Smooth out team miscommunication",
+      "desc": "Works with Slack too. Just add it to a channel.",
+      "useCases": [
+        "Remote-first teams",
+        "Text-heavy workplaces",
+        "Cross-department projects",
+        "Freelancer & vendor communications"
+      ],
+      "watching": "Umeko is quietly watching",
+      "detect": "Detects tension → DMs only the people involved"
+    }
+  },
+  "pricing": {
+    "title": "Pricing",
+    "freeTrial": "Free for your first month",
+    "line": {
+      "label": "Umeko LINE",
+      "price": "¥980",
+      "period": "/mo",
+      "desc": "1-on-1 counseling and group monitoring, all in one",
+      "features": [
+        "1-on-1 consultation, rephrasing & summaries",
+        "LINE group monitoring & mediation (1 group included)",
+        "Image, voice & PDF reading",
+        "Web search",
+        "Unlimited usage",
+        "One subscription covers the whole group"
+      ],
+      "extra": "Additional group: +¥490/mo",
+      "cta": "Start on LINE",
+      "cancel": "Cancel anytime"
+    },
+    "slack": {
+      "label": "Umeko for Slack",
+      "price": "¥980",
+      "period": "/mo",
+      "desc": "1-on-1 counseling and channel monitoring, all in one",
+      "features": [
+        "1-on-1 consultation, rephrasing & summaries",
+        "Slack channel monitoring & mediation (1 channel included)",
+        "Image, PDF & Excel reading",
+        "Web search",
+        "Unlimited usage",
+        "One subscription covers the whole channel"
+      ],
+      "extra": "Additional channel: +¥490/mo",
+      "cta": "Add to Slack",
+      "cancel": "Cancel anytime"
+    },
+    "tabLine": "Umeko LINE",
+    "tabSlack": "Umeko for Slack"
+  },
+  "faq": {
+    "title": "FAQ",
+    "items": [
+      {
+        "q": "Is my conversation data safe?",
+        "a": "Conversation data is managed using LINE/Slack identifiers, not real names. Your conversations are never made public or sold to third parties."
+      },
+      {
+        "q": "Will it reply to every message in a group?",
+        "a": "No. Umeko usually stays quiet. When it detects tension, it privately DMs the people involved — not the group. It will respond in the group if you call \"Umeko\" by name."
+      },
+      {
+        "q": "What happens when the free trial ends?",
+        "a": "Umeko stops responding. Subscribe to the Umeko plan (¥980/month) to unlock both 1-on-1 and group features."
+      },
+      {
+        "q": "Can it read images and PDFs?",
+        "a": "Yes. Umeko can read images, voice messages, PDFs, Word, and Excel files. You can even send a screenshot and ask \"How should I reply to this?\""
+      },
+      {
+        "q": "Is it easy to cancel?",
+        "a": "Yes. Just tell Umeko \"I want to cancel\" and you'll receive a link to the cancellation page. Note: blocking on LINE or uninstalling from Slack doesn't stop billing."
+      },
+      {
+        "q": "Does it work on both LINE and Slack?",
+        "a": "Yes. \"Umeko LINE\" and \"Umeko for Slack\" are two separate services. Same Umeko, but independently subscribed and billed."
+      }
+    ]
+  },
+  "cta": {
+    "title_1": "When words fail,",
+    "title_2": "talk to Umeko.",
+    "desc": "Don't hold it in. Start a conversation — it's free.",
+    "lineBtn": "Start on LINE",
+    "slackBtn": "Add to Slack",
+    "free": "Free for 1 month · Cancel anytime",
+    "qr": "Scan to add Umeko on LINE"
+  },
+  "footer": {
+    "company": "About us",
+    "copyright": "© 2026 Umeko"
+  },
+  "mock": {
+    "lineInput": "Type a message",
+    "slackInput": "Message {channel}",
+    "slackInputDm": "Message {channel}",
+    "members": "{count} members",
+    "familyGroup": "Family Group",
+    "dmTitle": "Umeko",
+    "devTeam": "Dev Team",
+    "familyChat": [
+      { "sender": "right", "text": "Why does this always happen?\nI'm the only one doing anything", "time": "21:42" },
+      { "sender": "left", "name": "Takashi", "text": "I told you — just ask me\nand I'll do it", "time": "21:43" },
+      { "sender": "right", "text": "Why should I have to ask?\nIt's your home too", "time": "21:44" }
+    ],
+    "dmIntervention": [
+      { "sender": "left", "name": "Umeko", "avatar": "/umeko-logo.png", "isBot": true, "text": "Hey — your message in the group might've come across a bit strong.\nTry leading with what you'd like help with. That usually lands better.", "time": "21:45" },
+      { "sender": "right", "text": "Yeah… I might've been\na bit harsh", "time": "21:46" },
+      { "sender": "left", "name": "Umeko", "avatar": "/umeko-logo.png", "isBot": true, "text": "Something like \"I'm worn out doing this alone — could you take over the trash?\" might feel easier for them to hear.", "time": "21:46" }
+    ],
+    "dmConsult": [
+      { "sender": "right", "text": "I need to tell my boss the\nproject is behind schedule…\nhow should I say it?", "time": "19:30" },
+      { "sender": "left", "name": "Umeko", "avatar": "/umeko-logo.png", "isBot": true, "text": "That's a tough one.\nHow far behind is it?", "time": "19:30" },
+      { "sender": "right", "text": "About a week.\nIt's partly my fault so\nit's even harder to say", "time": "19:31" },
+      { "sender": "left", "name": "Umeko", "avatar": "/umeko-logo.png", "isBot": true, "text": "How about something like:\n\n\"I apologize for the late update. The project is about a week behind schedule. I've put together the cause and a recovery plan — could you take a look?\"", "time": "19:32" }
+    ],
+    "slackBusiness": [
+      { "sender": "right", "name": "Sato", "text": "Why wasn't this shared beforehand?\nI didn't hear about this at all", "time": "14:20" },
+      { "sender": "left", "name": "Tanaka", "text": "I thought I mentioned it in last week's meeting…", "time": "14:22" },
+      { "sender": "right", "name": "Sato", "text": "You didn't. This always happens — information comes after the fact", "time": "14:23" }
+    ],
+    "slackDmIntervention": [
+      { "sender": "left", "name": "Umeko", "avatar": "/umeko-logo.png", "isBot": true, "text": "Your message in #dev-team might've come across a bit strong.\nTry shifting from \"I wasn't told\" to \"Can we agree on how to share updates?\" — it keeps things constructive.", "time": "14:24" }
+    ]
+  },
+  "structuredData": {
+    "appDesc": "AI communication assistant for LINE. Group monitoring, 1-on-1 consultation, rephrasing, and summaries.",
+    "freeTrial": "Free Trial",
+    "freeDesc": "All features free for 1 month",
+    "planName": "Umeko Plan",
+    "planDesc": "¥980/month for 1-on-1 counseling and group monitoring",
+    "faqItems": [
+      { "q": "Is my conversation data safe?", "a": "Data is managed using LINE identifiers, not real names. Conversations are never made public or sold to third parties." },
+      { "q": "What happens after the free trial?", "a": "Umeko stops responding. Subscribe to a paid plan to continue using it." },
+      { "q": "Does it reply to every message in a group?", "a": "No. It stays quiet and only responds when it detects tension or when called by name." },
+      { "q": "What can it do in 1-on-1?", "a": "Help with phrasing, message rewording, emotional processing, and putting vague feelings into words." },
+      { "q": "Is it easy to cancel?", "a": "Yes. Cancel anytime. You can also block Umeko on LINE to stop using it." }
+    ]
+  }
+}

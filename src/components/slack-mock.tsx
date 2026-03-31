@@ -42,11 +42,18 @@ export function SlackMock({
   channel,
   messages,
   isDm,
+  inputPlaceholder = isDm ? `${channel} にメッセージを送信` : `#${channel} にメッセージを送信`,
+  brandName = "うめこ",
 }: {
   channel: string;
   messages: SlackMessage[];
   isDm?: boolean;
+  inputPlaceholder?: string;
+  brandName?: string;
 }) {
+  const placeholder = inputPlaceholder
+    .replace("{channel}", isDm ? channel : `#${channel}`);
+
   return (
     <div className="w-full max-w-[380px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-white">
       {/* Sidebar + Header */}
@@ -55,7 +62,7 @@ export function SlackMock({
           <div className="w-5 h-5 rounded bg-white/20 flex items-center justify-center">
             <span className="text-white text-[10px] font-bold">U</span>
           </div>
-          <span className="text-white/90 text-sm font-bold">うめこ</span>
+          <span className="text-white/90 text-sm font-bold">{brandName}</span>
         </div>
       </div>
       <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-1.5">
@@ -81,43 +88,23 @@ export function SlackMock({
       {/* Input bar */}
       <div className="px-3 pb-3">
         <div className="border border-gray-300 rounded-lg px-3 py-2 text-[12px] text-gray-400">
-          {isDm ? `${channel} にメッセージを送信` : `#${channel} にメッセージを送信`}
+          {placeholder}
         </div>
       </div>
     </div>
   );
 }
 
-// Channel chat where umeko stays silent
+// Keep exports for backward compatibility
 export const SLACK_BUSINESS_CHAT: SlackMessage[] = [
-  {
-    sender: "right",
-    name: "佐藤",
-    text: "この前の件、なんで事前に共有してくれなかったんですか？\nこっちは聞いてなかったんですけど",
-    time: "14:20",
-  },
-  {
-    sender: "left",
-    name: "田中",
-    text: "いや、先週のMTGで話したと思うんですが…",
-    time: "14:22",
-  },
-  {
-    sender: "right",
-    name: "佐藤",
-    text: "聞いてないです。いつもそうですよね、共有が後出しなんですよ",
-    time: "14:23",
-  },
+  { sender: "right", name: "佐藤", text: "この前の件、なんで事前に共有してくれなかったんですか？\nこっちは聞いてなかったんですけど", time: "14:20" },
+  { sender: "left", name: "田中", text: "いや、先週のMTGで話したと思うんですが…", time: "14:22" },
+  { sender: "right", name: "佐藤", text: "聞いてないです。いつもそうですよね、共有が後出しなんですよ", time: "14:23" },
 ];
 
-// DM from umeko to the party
 export const SLACK_DM_INTERVENTION: SlackMessage[] = [
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "さっきの#開発チーム、少し強めに伝わってるかもしれません。\n「聞いてなかった」を「共有の仕方を決めませんか」に変えると、建設的に進みやすいかも",
-    time: "14:24",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "さっきの#開発チーム、少し強めに伝わってるかもしれません。\n「聞いてなかった」を「共有の仕方を決めませんか」に変えると、建設的に進みやすいかも", time: "14:24",
   },
 ];

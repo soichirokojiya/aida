@@ -64,10 +64,14 @@ export function LineMock({
   title,
   messages,
   memberCount,
+  inputPlaceholder = "メッセージを入力",
+  membersLabel = "{count}人のメンバー",
 }: {
   title: string;
   messages: Message[];
   memberCount?: number;
+  inputPlaceholder?: string;
+  membersLabel?: string;
 }) {
   return (
     <div className="w-full max-w-[340px] mx-auto rounded-2xl overflow-hidden shadow-xl border border-gray-200 bg-[#7494C0]">
@@ -79,7 +83,7 @@ export function LineMock({
         <div className="flex-1 text-center">
           <p className="text-white text-sm font-medium">{title}</p>
           {memberCount && (
-            <p className="text-white/60 text-[10px]">{memberCount}人のメンバー</p>
+            <p className="text-white/60 text-[10px]">{membersLabel.replace("{count}", String(memberCount))}</p>
           )}
         </div>
         <div className="w-[18px]" />
@@ -101,7 +105,7 @@ export function LineMock({
       {/* Input bar */}
       <div className="bg-[#EFF1F5] px-3 py-2 flex items-center gap-2">
         <div className="flex-1 bg-white rounded-full px-3 py-1.5 text-[12px] text-gray-300">
-          メッセージを入力
+          {inputPlaceholder}
         </div>
         <div className="w-7 h-7 rounded-full bg-[#06C755] flex items-center justify-center">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
@@ -113,31 +117,22 @@ export function LineMock({
   );
 }
 
-// Group chat where umeko stays silent (watching)
+// Keep exports for backward compatibility (used by old page.tsx if still present)
 export const FAMILY_CHAT: Message[] = [
   { sender: "right", text: "なんで毎回こうなるの？\n私ばっかりやってるんだけど", time: "21:42" },
   { sender: "left", name: "たかし", text: "いや、言ってくれればやるって\n前も言ったじゃん", time: "21:43" },
   { sender: "right", text: "なんでこっちがお願いしなきゃ\nいけないの？自分の家でしょ？", time: "21:44" },
 ];
 
-// DM from umeko to the party (arrives privately)
 export const DM_INTERVENTION_CHAT: Message[] = [
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "さっきのグループ、少し強く伝わってるかも。\n「○○してほしい」を先に出すと、伝わりやすくなるかもね",
-    time: "21:45",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "さっきのグループ、少し強く伝わってるかも。\n「○○してほしい」を先に出すと、伝わりやすくなるかもね", time: "21:45",
   },
   { sender: "right", text: "たしかに…ちょっと言い方\nきつかったかも", time: "21:46" },
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "たとえば「一人でやるのしんどいから、ゴミ出しだけお願いしてもいい？」みたいな感じだと、受け取りやすいかも",
-    time: "21:46",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "たとえば「一人でやるのしんどいから、ゴミ出しだけお願いしてもいい？」みたいな感じだと、受け取りやすいかも", time: "21:46",
   },
 ];
 
@@ -146,32 +141,20 @@ export const BUSINESS_CHAT: Message[] = [
   { sender: "left", name: "田中", text: "いや、先週のMTGで\n話したと思うんですが…", time: "14:22" },
   { sender: "right", text: "聞いてないです。\nいつもそうですよね、\n共有が後出しなんですよ", time: "14:23" },
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "ちょっと待って。\n「伝えたつもり」と「聞いてない」がぶつかってるね。\nまず、先週のMTGの議事録を一緒に確認してみない？事実ベースで整理しよう。",
-    time: "14:24",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "ちょっと待って。\n「伝えたつもり」と「聞いてない」がぶつかってるね。\nまず、先週のMTGの議事録を一緒に確認してみない？事実ベースで整理しよう。", time: "14:24",
   },
 ];
 
 export const DM_CONSULT_CHAT: Message[] = [
   { sender: "right", text: "上司にプロジェクトの遅れを\n報告しなきゃなんだけど、\nどう言えばいいかな…", time: "19:30" },
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "それは言いづらいやつだね。\nどのくらい遅れてる？",
-    time: "19:30",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "それは言いづらいやつだね。\nどのくらい遅れてる？", time: "19:30",
   },
   { sender: "right", text: "1週間くらい。\n自分のミスもあるから\nよけいに言いにくい", time: "19:31" },
   {
-    sender: "left",
-    name: "うめこ",
-    avatar: "/umeko-logo.png",
-    isBot: true,
-    text: "たとえばこんな感じはどう？\n\n「お伝えするのが遅くなり申し訳ありません。○○の件、当初の予定から1週間ほど遅れが出ています。原因と対策をまとめましたので、ご確認いただけますか」",
-    time: "19:32",
+    sender: "left", name: "うめこ", avatar: "/umeko-logo.png", isBot: true,
+    text: "たとえばこんな感じはどう？\n\n「お伝えするのが遅くなり申し訳ありません。○○の件、当初の予定から1週間ほど遅れが出ています。原因と対策をまとめましたので、ご確認いただけますか」", time: "19:32",
   },
 ];
