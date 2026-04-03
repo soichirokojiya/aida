@@ -729,6 +729,13 @@ async function handleGroupMessage(
     ? { action: "respond" as const, severity: "low" as const, reason: "名前を呼ばれた" }
     : await judgeGroupMessage(recentMessages, event.text, groupContext, relationshipCtx);
 
+  // If mentioned but text is empty/short after stripping bot name, respond immediately
+  if (mentioned && textForProcessing.length < 2) {
+    await saveMessage(conversation.id, event, "normal", 0);
+    await sendResponse(adapter, event, "呼んだ？ なにか気になることがあったら気軽に話しかけてね。");
+    return;
+  }
+
   // Save message
   const conflictScore = judgment.action === "intervene" ? (judgment.severity === "high" ? 90 : judgment.severity === "medium" ? 60 : 30) : 0;
   const intentResult = await detectIntent(textForProcessing);

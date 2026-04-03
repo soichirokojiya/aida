@@ -139,14 +139,19 @@ export function getMediatorPromptForContext(contextType: string): string {
 export const INTENT_DETECTION_PROMPT = `以下のメッセージの意図を判定してください。
 
 判定結果は以下のいずれか1つをJSON形式で返してください:
-- "normal": 通常の会話
-- "rewrite_request": 言い換え・柔らかくしてほしいという依頼
+- "normal": 通常の会話（雑談、質問、お願い、作文依頼なども含む）
+- "rewrite_request": 既存の文章を言い換え・柔らかくしてほしいという依頼（「言い換えて」「柔らかくして」「丁寧にして」等の明示的キーワードがある場合のみ）
 - "summarize_request": 要約・まとめてほしいという依頼
 - "mediation_request": 仲裁・整理してほしいという依頼
 - "search_request": 検索・調べてほしいという依頼
 - "conflict_signal": 対立・衝突の兆候
 - "cooldown_needed": クールダウンが必要
 - "clarification_needed": 明確化が必要
+
+重要な判定基準:
+- 「お礼を簡単に」「断りの文章を書いて」「謝罪文を作って」等の新規作文依頼は "normal"（rewrite_requestではない）
+- rewrite_requestは「既にある文章」を言い換える場合のみ。新しく文章を作る依頼はnormal
+- 迷ったらnormalにする
 
 JSON形式: {"intent": "...", "confidence": 0.0-1.0}`;
 
