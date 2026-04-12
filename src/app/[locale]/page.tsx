@@ -263,6 +263,31 @@ export default async function LandingPage({
         </div>
       </section>
 
+      {/* ── 6.5 いるだけで変わる ── */}
+      <section className="py-24 px-6 bg-gradient-to-b from-white to-[#F6FAF8]">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-center text-2xl md:text-3xl font-bold text-gray-800 mb-10">
+            {m.presence.title}
+          </h2>
+
+          <div className="space-y-4 max-w-xl mx-auto">
+            {(m.presence.lines as string[]).map((text: string, i: number) => (
+              <p key={i} className="text-gray-600 text-base leading-relaxed">{text}</p>
+            ))}
+          </div>
+
+          <div className="mt-12 bg-teal-50/60 rounded-2xl p-8 border border-teal-100/60">
+            <div className="flex items-start gap-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/umeko-logo.png" alt="" className="w-9 h-9 rounded-full flex-shrink-0 mt-0.5" />
+              <p className="text-gray-700 leading-[1.9] text-sm whitespace-pre-line">
+                {m.presence.umeko}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── 7. 1対1で使う ── */}
       <section className="py-20 px-6 bg-[#F6FAF8]">
         <div className="max-w-5xl mx-auto">

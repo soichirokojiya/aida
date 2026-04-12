@@ -81,6 +81,16 @@
       "Shared living arrangements"
     ]
   },
+  "presence": {
+    "title": "What changes just by having Umeko there.",
+    "lines": [
+      "Intervening isn't Umeko's only job.",
+      "Just having Umeko in the group makes everyone choose their words a little more carefully. The thought \"Umeko might say something\" creates a brief pause before someone hits send out of frustration.",
+      "We heard this from someone actually using it: \"Since we added Umeko, no one in the family group says hurtful things anymore.\"",
+      "A day with no interventions is the best kind of day. That's what Umeko believes."
+    ],
+    "umeko": "If I've been quiet for a while, that means the group is doing well. And that's exactly how it should be."
+  },
   "dm": {
     "label": "1-on-1 chats",
     "title": "Not sure how to say it? Start with Umeko",
