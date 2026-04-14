@@ -127,7 +127,7 @@ export function createSlackAdapter(teamId: string): ChannelAdapter {
     normalizeEvents(body: unknown): NormalizedMessageEvent[] {
       const payload = body as SlackEventPayload;
       const eventType = payload.event?.type;
-      if (!payload.event || eventType !== "message") {
+      if (!payload.event || (eventType !== "message" && eventType !== "app_mention")) {
         return [];
       }
       // Skip bot messages, but allow file_share subtype

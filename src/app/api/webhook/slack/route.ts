@@ -4,6 +4,22 @@ import { processMessage } from "@/lib/channels/pipeline";
 
 export const maxDuration = 60;
 
+// In-memory dedup for Slack events. message + app_mention fire two separate
+// webhooks for the same user message; both share event.ts, so we collapse them.
+// Survives within a warm Lambda; cold starts may leak one dupe (acceptable).
+const recentEventKeys = new Map<string, number>();
+const DEDUP_TTL_MS = 5 * 60 * 1000;
+
+function isDuplicateSlackEvent(key: string): boolean {
+  const now = Date.now();
+  for (const [k, t] of recentEventKeys) {
+    if (now - t > DEDUP_TTL_MS) recentEventKeys.delete(k);
+  }
+  if (recentEventKeys.has(key)) return true;
+  recentEventKeys.set(key, now);
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
@@ -58,6 +74,12 @@ export async function POST(request: NextRequest) {
       const events = adapter.normalizeEvents(body);
 
       for (const event of events) {
+        const dedupKey = `${teamId}:${event.externalThreadId}:${event.externalMessageId}`;
+        if (isDuplicateSlackEvent(dedupKey)) {
+          console.log(`Slack[${teamId}]: dedup skip ${dedupKey} (type=${body.event.type})`);
+          continue;
+        }
+
         const start = Date.now();
         try {
           // Track Slack user (non-blocking)
