@@ -104,7 +104,7 @@ export const lineAdapter: ChannelAdapter = {
   },
 
   async sendReply(replyToken: string, text: string): Promise<void> {
-    await fetch("https://api.line.me/v2/bot/message/reply", {
+    const res = await fetch("https://api.line.me/v2/bot/message/reply", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -115,10 +115,14 @@ export const lineAdapter: ChannelAdapter = {
         messages: [{ type: "text", text }],
       }),
     });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`LINE sendReply failed: ${res.status} ${body} token=${replyToken.slice(0, 8)}`);
+    }
   },
 
   async sendPush(externalThreadId: string, text: string): Promise<void> {
-    await fetch("https://api.line.me/v2/bot/message/push", {
+    const res = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -129,6 +133,10 @@ export const lineAdapter: ChannelAdapter = {
         messages: [{ type: "text", text }],
       }),
     });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`LINE sendPush failed: ${res.status} ${body} to=${externalThreadId.slice(0, 8)}`);
+    }
   },
 };
 
