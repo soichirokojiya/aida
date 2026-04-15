@@ -142,7 +142,7 @@ export function createSlackAdapter(teamId: string): ChannelAdapter {
         externalThreadId: event.channel || "unknown",
         externalMessageId: event.ts || Date.now().toString(),
         senderId: event.user || "unknown",
-        text: (event.text || "").replace(/<@[A-Z0-9]+>/g, "").trim(),
+        text: (event.text || "").replace(/<@[A-Z0-9]+>/g, "うめこ").trim(),
         timestamp: new Date(parseFloat(event.ts || "0") * 1000),
         isDirectMessage: isDm,
         rawEvent: { ...event, team_id: teamId },

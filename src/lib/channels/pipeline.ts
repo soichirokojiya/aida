@@ -667,8 +667,17 @@ async function handleGroupMessage(
   adapter: ChannelAdapter,
   conversation: { id: string; contextType: string }
 ): Promise<void> {
+  try {
   const mentioned = isBotMentioned(event.text);
   const textForProcessing = mentioned ? stripBotName(event.text) : event.text;
+
+  // If mentioned but text is empty/short after stripping bot name, respond immediately
+  // (placed before Promise.all so context-fetch failures can't swallow this)
+  if (mentioned && textForProcessing.length < 2) {
+    await saveMessage(conversation.id, event, "normal", 0);
+    await sendResponse(adapter, event, "呼んだ？ なにか気になることがあったら気軽に話しかけてね。");
+    return;
+  }
 
   // ── Layer 0: Safety check (rule-based, free) ──
   const safetyRuleResult = checkSafetyRuleBased(event.text);
@@ -728,13 +737,6 @@ async function handleGroupMessage(
   const judgment = mentioned
     ? { action: "respond" as const, severity: "low" as const, reason: "名前を呼ばれた" }
     : await judgeGroupMessage(recentMessages, event.text, groupContext, relationshipCtx);
-
-  // If mentioned but text is empty/short after stripping bot name, respond immediately
-  if (mentioned && textForProcessing.length < 2) {
-    await saveMessage(conversation.id, event, "normal", 0);
-    await sendResponse(adapter, event, "呼んだ？ なにか気になることがあったら気軽に話しかけてね。");
-    return;
-  }
 
   // Save message
   const conflictScore = judgment.action === "intervene" ? (judgment.severity === "high" ? 90 : judgment.severity === "medium" ? 60 : 30) : 0;
@@ -903,6 +905,17 @@ async function handleGroupMessage(
   maybeUpdateSummary(conversation.id).catch((err) => {
     console.warn("Group summary update failed:", conversation.id, err instanceof Error ? err.message : err);
   });
+
+  } catch (err) {
+    console.error("Group handler error:", err instanceof Error ? err.stack : err);
+    if (isBotMentioned(event.text)) {
+      try {
+        await sendResponse(adapter, event, "ごめんね、今ちょっと調子が悪いみたい。少し時間を置いてからまた話しかけてもらえるとうれしいです。");
+      } catch (sendErr) {
+        console.error("Failed to send group error response:", sendErr);
+      }
+    }
+  }
 }
 
 export async function processMessage(
